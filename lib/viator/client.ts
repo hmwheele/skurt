@@ -19,7 +19,7 @@ export class ViatorClient {
 
       const requestBody = {
         filtering: {
-          searchTerm: params.destination,
+          destination: params.destination,
           ...(params.startDate && { startDate: params.startDate }),
           ...(params.endDate && { endDate: params.endDate }),
         },
