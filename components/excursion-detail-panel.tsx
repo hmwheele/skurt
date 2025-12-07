@@ -74,6 +74,15 @@ export function ExcursionPanel({ excursion, open, onClose }: ExcursionPanelProps
     setImageLoaded(false)
   }, [currentImage])
 
+  // Reset carousel to first image when panel opens
+  useEffect(() => {
+    if (open) {
+      setCurrentImage(0)
+      setImageLoaded(false)
+      setMapLoaded(false)
+    }
+  }, [open])
+
   if (!excursion) return null
 
   // Use excursion images if available, otherwise use thumbnail as fallback

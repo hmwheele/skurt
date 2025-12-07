@@ -15,37 +15,44 @@ export class ViatorClient {
    */
   async searchProducts(params: ViatorSearchParams): Promise<ExcursionData[]> {
     try {
-      // For MVP, we'll use the /search/products endpoint
-      // Note: Actual endpoint structure may vary based on Viator's API documentation
+      // Using Viator's /search/freetext endpoint
+      console.log('🔍 Searching Viator API for:', params.destination)
 
-      const response = await fetch(`${VIATOR_API_BASE}/${VIATOR_API_VERSION}/search/products`, {
+      const response = await fetch(`${VIATOR_API_BASE}/${VIATOR_API_VERSION}/search/freetext`, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
+          'Accept-Language': 'en-US',
           'Content-Type': 'application/json',
           'exp-api-key': this.apiKey,
         },
         body: JSON.stringify({
-          searchQuery: params.destination,
+          searchTerm: params.destination,
           currency: params.currency || 'USD',
           startDate: params.startDate,
           endDate: params.endDate,
-          pagination: {
-            offset: ((params.page || 1) - 1) * (params.limit || 20),
-            limit: params.limit || 20,
-          }
+          topX: '1-20', // Get top 20 results
+          destId: null,
+          catId: null,
         }),
       })
 
+      console.log('📡 Viator API response status:', response.status)
+
       if (!response.ok) {
-        throw new Error(`Viator API error: ${response.statusText}`)
+        const errorText = await response.text()
+        console.error('❌ Viator API error response:', errorText)
+        throw new Error(`Viator API error: ${response.status} ${response.statusText}`)
       }
 
       const data = await response.json()
+      console.log('✅ Viator API returned', data.data?.length || 0, 'products')
 
-      return this.transformProducts(data.products || [])
+      // Viator returns products in data array
+      const products = data.data || []
+      return this.transformProducts(products)
     } catch (error) {
-      console.error('Viator API error:', error)
+      console.error('❌ Viator API error:', error)
       throw error
     }
   }
@@ -79,38 +86,57 @@ export class ViatorClient {
   /**
    * Transform Viator product to our ExcursionData format
    */
-  private transformProduct(product: ViatorProduct): ExcursionData {
-    const durationMinutes = product.duration?.fixedDurationInMinutes ||
-                           product.duration?.variableDurationFromMinutes ||
-                           0
+  private transformProduct(product: any, index: number = 0): ExcursionData {
+    try {
+      // Handle different possible API response structures
+      const durationMinutes = product.duration?.fixedDurationInMinutes ||
+                             product.duration?.variableDurationFromMinutes ||
+                             product.durationInMinutes ||
+                             0
 
-    // Extract up to 3 images
-    const images = product.images
-      .slice(0, 3)
-      .map(img => img.imageSource)
+      // Extract up to 3 images - handle different structures
+      const productImages = product.images || product.thumbnailHiResURL ? [{ imageSource: product.thumbnailHiResURL }] : []
+      const images = productImages
+        .slice(0, 3)
+        .map((img: any) => img.imageSource || img.url || img)
+        .filter(Boolean)
 
-    return {
-      id: product.productCode,
-      title: product.title,
-      description: product.description,
-      price: product.pricing.summary.fromPrice,
-      rating: product.reviews.combinedAverageRating,
-      reviewCount: product.reviews.totalReviews,
-      duration: this.formatDuration(durationMinutes),
-      provider: 'Viator',
-      thumbnail: product.images[0]?.imageSource || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=400&h=300&fit=crop',
-      category: this.extractCategory(product.tags),
-      location: product.location?.name,
-      affiliateLink: this.generateAffiliateLink(product.productCode, product.productUrl),
-      images: images.length > 0 ? images : undefined,
+      const price = product.pricing?.summary?.fromPrice ||
+                   product.price?.amount ||
+                   product.priceFormatted?.replace(/[^0-9.]/g, '') ||
+                   0
+
+      return {
+        id: product.productCode || product.code || `viator-${index}`,
+        title: product.title || 'Untitled Experience',
+        description: product.description || product.shortDescription || 'No description available',
+        price: typeof price === 'number' ? price : parseFloat(price) || 0,
+        rating: product.reviews?.combinedAverageRating || product.rating || 4.5,
+        reviewCount: product.reviews?.totalReviews || product.reviewCount || 0,
+        duration: this.formatDuration(durationMinutes),
+        provider: 'Viator',
+        thumbnail: images[0] || product.thumbnailURL || product.thumbnailHiResURL || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=400&h=300&fit=crop',
+        category: this.extractCategory(product.tags || product.categories || []),
+        location: product.location?.name || product.destinationName || 'Location not specified',
+        affiliateLink: this.generateAffiliateLink(
+          product.productCode || product.code,
+          product.productUrl || product.webURL
+        ),
+        images: images.length > 0 ? images : undefined,
+        // Assign to random day (1-7) for multi-day trip support
+        day: (index % 7) + 1,
+      }
+    } catch (error) {
+      console.error('Error transforming product:', error, product)
+      throw error
     }
   }
 
   /**
    * Transform multiple products
    */
-  private transformProducts(products: ViatorProduct[]): ExcursionData[] {
-    return products.map(product => this.transformProduct(product))
+  private transformProducts(products: any[]): ExcursionData[] {
+    return products.map((product, index) => this.transformProduct(product, index))
   }
 
   /**
@@ -130,26 +156,36 @@ export class ViatorClient {
   /**
    * Extract primary category from tags
    */
-  private extractCategory(tags: Array<{ tag: string; tagId: number }>): string {
+  private extractCategory(tags: any[]): string {
+    if (!Array.isArray(tags) || tags.length === 0) {
+      return 'Sightseeing'
+    }
+
     // Map common tag IDs or names to our categories
     const categoryMap: Record<string, string> = {
       'Adventure': 'Adventure',
       'Cultural': 'Culture',
+      'Culture': 'Culture',
       'Food': 'Food & Drink',
       'Nature': 'Nature',
       'Water': 'Water Activities',
       'Sightseeing': 'Sightseeing',
+      'Museum': 'Culture',
+      'Historical': 'Culture',
+      'Beach': 'Water Activities',
+      'Outdoor': 'Adventure',
     }
 
-    for (const { tag } of tags) {
+    for (const tag of tags) {
+      const tagName = typeof tag === 'string' ? tag : tag.tag || tag.name || ''
       for (const [key, category] of Object.entries(categoryMap)) {
-        if (tag.toLowerCase().includes(key.toLowerCase())) {
+        if (tagName.toLowerCase().includes(key.toLowerCase())) {
           return category
         }
       }
     }
 
-    return 'Other'
+    return 'Sightseeing'
   }
 
   /**
