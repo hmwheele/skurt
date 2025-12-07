@@ -30,6 +30,7 @@ interface ExcursionCardProps {
 export function ExcursionCard({ excursion, onClick, index = 0 }: ExcursionCardProps) {
   const [isSaved, setIsSaved] = useState(false)
   const [showAuthModal, setShowAuthModal] = useState(false)
+  const [imageLoaded, setImageLoaded] = useState(false)
 
   const handleSave = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -58,11 +59,15 @@ export function ExcursionCard({ excursion, onClick, index = 0 }: ExcursionCardPr
       >
         <div className="flex gap-4">
           <div className="flex flex-col gap-2 flex-shrink-0">
-            <div className="relative w-32 h-24 overflow-hidden">
+            <div className="relative w-32 h-24 overflow-hidden bg-muted">
               <img
                 src={excursion.thumbnail || "/placeholder.svg"}
                 alt={excursion.title}
-                className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                className={cn(
+                  "h-full w-full object-cover transition-all duration-500 group-hover:scale-105",
+                  imageLoaded ? "opacity-100" : "opacity-0"
+                )}
+                onLoad={() => setImageLoaded(true)}
               />
             </div>
 
