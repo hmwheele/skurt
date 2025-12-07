@@ -17,23 +17,28 @@ export class ViatorClient {
       // Using Viator Partner API /products/search endpoint
       console.log('🔍 Searching Viator API for:', params.destination)
 
+      const requestBody = {
+        searchTerm: params.destination,
+        currency: params.currency || 'USD',
+        pagination: {
+          offset: ((params.page || 1) - 1) * (params.limit || 20),
+          limit: params.limit || 20,
+        },
+        ...(params.startDate && { startDate: params.startDate }),
+        ...(params.endDate && { endDate: params.endDate }),
+      }
+
+      console.log('📤 Viator API request body:', JSON.stringify(requestBody, null, 2))
+
       const response = await fetch(`${VIATOR_API_BASE}/products/search`, {
         method: 'POST',
         headers: {
-          'Accept': 'application/json',
+          'Accept': 'application/json;version=2.0',
+          'Accept-Language': 'en-US',
           'Content-Type': 'application/json',
           'exp-api-key': this.apiKey,
         },
-        body: JSON.stringify({
-          searchTerm: params.destination,
-          currency: params.currency || 'USD',
-          pagination: {
-            offset: ((params.page || 1) - 1) * (params.limit || 20),
-            limit: params.limit || 20,
-          },
-          ...(params.startDate && { startDate: params.startDate }),
-          ...(params.endDate && { endDate: params.endDate }),
-        }),
+        body: JSON.stringify(requestBody),
       })
 
       console.log('📡 Viator API response status:', response.status)
@@ -41,11 +46,13 @@ export class ViatorClient {
       if (!response.ok) {
         const errorText = await response.text()
         console.error('❌ Viator API error response:', errorText)
-        throw new Error(`Viator API error: ${response.status} ${response.statusText}`)
+        console.error('❌ Viator API error status:', response.status, response.statusText)
+        throw new Error(`Viator API error: ${response.status} ${response.statusText} - ${errorText}`)
       }
 
       const data = await response.json()
-      console.log('✅ Viator API data:', JSON.stringify(data).substring(0, 200))
+      console.log('✅ Viator API response structure:', Object.keys(data))
+      console.log('✅ Viator API data preview:', JSON.stringify(data).substring(0, 500))
 
       // Try different possible response structures
       const products = data.products || data.data || data.results || []
