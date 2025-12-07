@@ -6,7 +6,7 @@ import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "Skurt - Discover Amazing Excursions",
+  title: "Skurt",
   description: "Find and book the best travel excursions worldwide",
   generator: "v0.app",
   icons: {

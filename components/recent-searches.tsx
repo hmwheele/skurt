@@ -1,38 +1,34 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel"
 
-const recentSearches = [
-  {
-    id: 1,
-    destination: "Paris, France",
-    dates: "Jan 15 - Jan 22, 2024",
-  },
-  {
-    id: 2,
-    destination: "Tokyo, Japan",
-    dates: "Feb 10 - Feb 18, 2024",
-  },
-  {
-    id: 3,
-    destination: "Bali, Indonesia",
-    dates: "Mar 5 - Mar 12, 2024",
-  },
-  {
-    id: 4,
-    destination: "Barcelona, Spain",
-    dates: "Apr 20 - Apr 27, 2024",
-  },
-]
+interface RecentSearch {
+  destination: string
+  dates: string | null
+  timestamp: number
+}
 
 export function RecentSearches() {
   const router = useRouter()
+  const [recentSearches, setRecentSearches] = useState<RecentSearch[]>([])
 
-  const handleCardClick = (destination: string, dates: string) => {
+  useEffect(() => {
+    // Load recent searches from localStorage
+    const searches = JSON.parse(localStorage.getItem("recentSearches") || "[]")
+    setRecentSearches(searches)
+  }, [])
+
+  const handleCardClick = (destination: string, dates: string | null) => {
     const params = new URLSearchParams()
     params.set("destination", destination)
     router.push(`/search?${params.toString()}`)
+  }
+
+  // Don't show section if no recent searches
+  if (recentSearches.length === 0) {
+    return null
   }
 
   return (
@@ -47,9 +43,9 @@ export function RecentSearches() {
           className="w-full"
         >
           <CarouselContent className="-ml-4">
-            {recentSearches.map((search) => (
+            {recentSearches.map((search, index) => (
               <CarouselItem
-                key={search.id}
+                key={`${search.destination}-${index}`}
                 className="pl-4 basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/3 xl:basis-1/4"
               >
                 <button
@@ -58,7 +54,9 @@ export function RecentSearches() {
                 >
                   <div className="space-y-2">
                     <div className="text-foreground font-sans text-3xl font-extrabold">{search.destination}</div>
-                    <div className="text-xs text-muted-foreground font-sans">{search.dates}</div>
+                    {search.dates && (
+                      <div className="text-xs text-muted-foreground font-sans">{search.dates}</div>
+                    )}
                   </div>
                 </button>
               </CarouselItem>
