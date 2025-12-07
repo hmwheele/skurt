@@ -5,10 +5,10 @@ const VIATOR_API_BASE = 'https://api.viator.com/partner'
 // Common destination IDs for Viator API
 // Source: Viator Partner API documentation
 const DESTINATION_MAPPING: Record<string, number> = {
-  // North America
+  // North America - Major Cities
+  'san francisco': 77,
   'new york': 684,
   'las vegas': 684,
-  'san francisco': 684,
   'los angeles': 684,
   'orlando': 684,
   'miami': 684,
@@ -196,6 +196,11 @@ export class ViatorClient {
       // Try different possible response structures
       const products = data.products || data.data || data.results || []
       console.log('✅ Viator API returned', products.length, 'products')
+
+      // Log first product structure to help debug
+      if (products.length > 0) {
+        console.log('📦 First product structure:', JSON.stringify(products[0]).substring(0, 1000))
+      }
 
       return this.transformProducts(products)
     } catch (error) {
