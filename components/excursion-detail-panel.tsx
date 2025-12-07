@@ -74,6 +74,20 @@ export function ExcursionPanel({ excursion, open, onClose }: ExcursionPanelProps
     ? excursion.images
     : [excursion.thumbnail]
 
+  // Calculate zoom level based on location specificity
+  const getZoomLevel = (location: string) => {
+    if (!location) return 11
+    // If location contains numbers, it's likely an address - zoom closer
+    if (/\d/.test(location)) return 15
+    // If location has multiple parts (e.g., "Street, District, City"), use medium zoom
+    const parts = location.split(',').map(p => p.trim())
+    if (parts.length > 2) return 13
+    // Just city and country - wider zoom
+    return 11
+  }
+
+  const zoomLevel = getZoomLevel(excursion.location || '')
+
   const handleSave = () => {
     const isLoggedIn = localStorage.getItem("isLoggedIn") === "true"
     if (!isLoggedIn) {
@@ -200,15 +214,15 @@ export function ExcursionPanel({ excursion, open, onClose }: ExcursionPanelProps
               <div>
                 <h3 className="text-lg font-semibold mb-3">Location</h3>
                 <div className="aspect-video rounded-lg overflow-hidden bg-muted">
-                  <iframe
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0 }}
-                    loading="lazy"
-                    allowFullScreen
-                    referrerPolicy="no-referrer-when-downgrade"
-                    src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodeURIComponent(excursion.location || '')}&zoom=13`}
+                  <img
+                    src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+ff0000(${encodeURIComponent(excursion.location || 'Paris, France')})/${encodeURIComponent(excursion.location || 'Paris, France')},${zoomLevel},0/800x450@2x?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw`}
+                    alt={`Map of ${excursion.location}`}
+                    className="w-full h-full object-cover"
                   />
+                </div>
+                <div className="flex items-center gap-1 mt-2 text-sm text-muted-foreground">
+                  <MapPin className="h-4 w-4" />
+                  <span>{excursion.location}</span>
                 </div>
               </div>
 
