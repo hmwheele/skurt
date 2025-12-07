@@ -69,6 +69,11 @@ export function ExcursionPanel({ excursion, open, onClose }: ExcursionPanelProps
   const [imageLoaded, setImageLoaded] = useState(false)
   const [mapLoaded, setMapLoaded] = useState(false)
 
+  // Reset image loaded state when switching images
+  useEffect(() => {
+    setImageLoaded(false)
+  }, [currentImage])
+
   if (!excursion) return null
 
   // Use excursion images if available, otherwise use thumbnail as fallback
@@ -92,11 +97,6 @@ export function ExcursionPanel({ excursion, open, onClose }: ExcursionPanelProps
 
   // Get Mapbox token with proper fallback for client-side rendering
   const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw'
-
-  // Reset image loaded state when switching images
-  useEffect(() => {
-    setImageLoaded(false)
-  }, [currentImage])
 
   const handleSave = () => {
     const isLoggedIn = localStorage.getItem("isLoggedIn") === "true"
