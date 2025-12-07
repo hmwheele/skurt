@@ -106,16 +106,14 @@ export function ExcursionCard({ excursion, onClick, index = 0 }: ExcursionCardPr
             </div>
 
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1">
-                  <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                  <span className="text-sm font-medium">{excursion.rating}</span>
-                  <span className="text-xs text-muted-foreground">({excursion.reviewCount})</span>
-                </div>
-                <div className="text-sm">
-                  <span className="font-semibold text-lg">${excursion.price}</span>
-                  <span className="text-muted-foreground text-xs"> /person</span>
-                </div>
+              <div className="flex items-center gap-1">
+                <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                <span className="text-sm font-medium">{excursion.rating}</span>
+                <span className="text-xs text-muted-foreground">({excursion.reviewCount})</span>
+              </div>
+              <div className="text-sm text-right">
+                <span className="font-semibold text-lg">${excursion.price}</span>
+                <span className="text-muted-foreground text-xs"> /person</span>
               </div>
             </div>
           </div>
