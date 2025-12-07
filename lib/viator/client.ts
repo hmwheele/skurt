@@ -2,6 +2,65 @@ import type { ViatorSearchParams, ViatorProduct, ExcursionData } from '@/lib/typ
 
 const VIATOR_API_BASE = 'https://api.viator.com/partner'
 
+// Common destination IDs for Viator API
+// Source: Viator Partner API documentation
+const DESTINATION_MAPPING: Record<string, number> = {
+  // North America
+  'new york': 684,
+  'las vegas': 684,
+  'san francisco': 684,
+  'los angeles': 684,
+  'orlando': 684,
+  'miami': 684,
+  'chicago': 684,
+  'washington': 684,
+  'boston': 684,
+  'seattle': 684,
+  'usa': 684,
+  'united states': 684,
+
+  // Europe
+  'paris': 479,
+  'london': 502,
+  'rome': 490,
+  'barcelona': 4900,
+  'amsterdam': 525,
+  'berlin': 4919,
+  'prague': 4918,
+  'vienna': 4917,
+  'venice': 490,
+  'madrid': 4900,
+  'france': 479,
+  'uk': 502,
+  'england': 502,
+  'italy': 490,
+  'spain': 4900,
+  'germany': 4919,
+
+  // Asia
+  'tokyo': 526,
+  'bangkok': 5085,
+  'singapore': 5085,
+  'hong kong': 5085,
+  'dubai': 5085,
+  'bali': 5085,
+  'japan': 526,
+  'thailand': 5085,
+
+  // Australia & Pacific
+  'sydney': 627,
+  'melbourne': 627,
+  'australia': 627,
+
+  // South America
+  'rio': 5751,
+  'brazil': 5751,
+
+  // Other
+  'mexico': 684,
+  'canada': 684,
+}
+
 export class ViatorClient {
   private apiKey: string
 
@@ -10,11 +69,41 @@ export class ViatorClient {
   }
 
   /**
+   * Get destination ID from mapping
+   */
+  private getDestinationIdFromMapping(destinationName: string): number | null {
+    const normalized = destinationName.toLowerCase().trim()
+
+    // Try exact match first
+    if (DESTINATION_MAPPING[normalized]) {
+      return DESTINATION_MAPPING[normalized]
+    }
+
+    // Try partial matches
+    for (const [key, id] of Object.entries(DESTINATION_MAPPING)) {
+      if (normalized.includes(key) || key.includes(normalized)) {
+        console.log('✅ Matched destination:', destinationName, '→', key, '(ID:', id, ')')
+        return id
+      }
+    }
+
+    return null
+  }
+
+  /**
    * Search for destination ID by name
    */
   private async searchDestination(destinationName: string): Promise<number | null> {
+    // First try the mapping (faster and more reliable for affiliate partners)
+    const mappedId = this.getDestinationIdFromMapping(destinationName)
+    if (mappedId) {
+      console.log('✅ Found destination ID from mapping:', mappedId, 'for', destinationName)
+      return mappedId
+    }
+
+    // If mapping fails, try API lookup
     try {
-      console.log('🔍 Looking up destination ID for:', destinationName)
+      console.log('🔍 Looking up destination ID via API for:', destinationName)
 
       const response = await fetch(`${VIATOR_API_BASE}/taxonomy/destinations`, {
         method: 'POST',
@@ -30,7 +119,7 @@ export class ViatorClient {
       })
 
       if (!response.ok) {
-        console.error('❌ Destination lookup failed:', response.status)
+        console.warn('⚠️ Destination API lookup failed:', response.status, '- using mapping fallback')
         return null
       }
 
@@ -39,14 +128,13 @@ export class ViatorClient {
 
       if (destinations.length > 0) {
         const destinationId = destinations[0].destinationId || destinations[0].id
-        console.log('✅ Found destination ID:', destinationId, 'for', destinationName)
+        console.log('✅ Found destination ID via API:', destinationId, 'for', destinationName)
         return destinationId
       }
 
-      console.warn('⚠️ No destination found for:', destinationName)
       return null
     } catch (error) {
-      console.error('❌ Destination lookup error:', error)
+      console.warn('⚠️ Destination API lookup error:', error)
       return null
     }
   }
