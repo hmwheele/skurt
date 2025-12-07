@@ -5,12 +5,12 @@ import { Card } from "@/components/ui/card"
 import { MapPin } from "lucide-react"
 
 const popularDestinations = [
-  { name: "Paris", country: "France", image: "/placeholder.svg" },
-  { name: "Tokyo", country: "Japan", image: "/placeholder.svg" },
-  { name: "New York", country: "USA", image: "/placeholder.svg" },
-  { name: "Barcelona", country: "Spain", image: "/placeholder.svg" },
-  { name: "Dubai", country: "UAE", image: "/placeholder.svg" },
-  { name: "Rome", country: "Italy", image: "/placeholder.svg" },
+  { name: "Paris", country: "France", image: "/eiffel-tower-paris.png" },
+  { name: "Tokyo", country: "Japan", image: "/tokyo-skyline-night.png" },
+  { name: "New York", country: "USA", image: "/nyc-skyline.png" },
+  { name: "Barcelona", country: "Spain", image: "/sagrada-familia-barcelona.png" },
+  { name: "Dubai", country: "UAE", image: "/dubai-desert-safari-dunes.jpg" },
+  { name: "Bali", country: "Indonesia", image: "/bali-temple.jpg" },
 ]
 
 export function RecentSearches() {
