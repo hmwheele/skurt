@@ -160,7 +160,7 @@ export default function SearchPage() {
           />
         </div>
         <div className="ml-[320px]">
-          <div className="sticky top-[146px] z-20 bg-background">
+          <div className="bg-background">
             <div className="px-4 pt-6 pb-2">
               <h1 className="text-3xl font-bold font-sans">{destination}</h1>
               {usingMockData && !isLoading && (

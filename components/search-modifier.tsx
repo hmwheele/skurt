@@ -54,7 +54,7 @@ export function SearchModifier({ initialDestination, initialFromDate, initialToD
   return (
     <div className="border-b bg-muted/30 py-4">
       <div className="container mx-auto px-4">
-        <div className="flex flex-col md:flex-row gap-3 items-stretch max-w-4xl">
+        <div className="flex flex-col md:flex-row gap-3 items-stretch max-w-4xl mx-auto">
           {/* Destination autocomplete */}
           <div className="relative flex-1">
             <div className="relative">
