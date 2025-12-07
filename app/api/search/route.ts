@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { ViatorClient } from '@/lib/viator/client'
+import { getMockExcursions } from '@/lib/mock-data'
 import type { ExcursionData } from '@/lib/types/viator'
 
 export async function GET(request: NextRequest) {
@@ -18,6 +19,7 @@ export async function GET(request: NextRequest) {
     }
 
     const results: ExcursionData[] = []
+    let apiCallSuccessful = false
 
     // Viator API
     if (process.env.VIATOR_API_KEY) {
@@ -31,8 +33,10 @@ export async function GET(request: NextRequest) {
           limit: 20,
         })
         results.push(...viatorResults)
+        apiCallSuccessful = true
+        console.log(`✅ Viator API: Found ${viatorResults.length} results`)
       } catch (error) {
-        console.error('Viator API error:', error)
+        console.error('❌ Viator API error:', error)
         // Continue with other providers even if Viator fails
       }
     }
@@ -41,7 +45,15 @@ export async function GET(request: NextRequest) {
     // if (process.env.GETYOURGUIDE_API_KEY) {
     //   const gygResults = await getYourGuideClient.search(...)
     //   results.push(...gygResults)
+    //   apiCallSuccessful = true
     // }
+
+    // Fallback to mock data if no API results (for local development/testing)
+    if (results.length === 0) {
+      console.log('📦 Using mock data (API unavailable or no results)')
+      const mockResults = getMockExcursions(destination)
+      results.push(...mockResults)
+    }
 
     // Sort by rating (descending) then by price (ascending)
     results.sort((a, b) => {
@@ -55,6 +67,7 @@ export async function GET(request: NextRequest) {
       excursions: results,
       total: results.length,
       page,
+      usingMockData: !apiCallSuccessful,
     })
   } catch (error) {
     console.error('Search API error:', error)

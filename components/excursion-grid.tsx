@@ -5,64 +5,20 @@ import { ExcursionCard } from "@/components/excursion-card"
 import { ExcursionDetailPanel } from "@/components/excursion-detail-panel"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Progress } from "@/components/ui/progress"
-
-// Mock data - will be replaced with API data
-const mockExcursions = [
-  {
-    id: "1",
-    title: "Eiffel Tower Skip-the-Line Ticket with Summit Access",
-    description: "Bypass the crowds with priority access to Paris's iconic Eiffel Tower",
-    price: 89,
-    rating: 4.8,
-    reviewCount: 1250,
-    duration: "2 hours",
-    provider: "Viator",
-    thumbnail: "/placeholder.svg",
-    category: "Sightseeing",
-    location: "Paris",
-    day: 1,
-  },
-  {
-    id: "2",
-    title: "Seine River Dinner Cruise",
-    description: "Enjoy a romantic evening cruise along the Seine with gourmet dining",
-    price: 125,
-    rating: 4.7,
-    reviewCount: 890,
-    duration: "3 hours",
-    provider: "GetYourGuide",
-    thumbnail: "/placeholder.svg",
-    category: "Food & Drink",
-    location: "Paris",
-    day: 2,
-  },
-  {
-    id: "3",
-    title: "Louvre Museum Guided Tour",
-    description: "Expert-led tour of the world's largest art museum",
-    price: 65,
-    rating: 4.9,
-    reviewCount: 2100,
-    duration: "3 hours",
-    provider: "Viator",
-    thumbnail: "/placeholder.svg",
-    category: "Culture",
-    location: "Paris",
-    day: 1,
-  },
-  // Add more mock data for other days...
-]
+import type { ExcursionData } from "@/lib/types/viator"
 
 interface ExcursionGridProps {
   selectedDay: number
   isLoading?: boolean
   loadingProgress?: number
+  excursions: ExcursionData[]
 }
 
-export function ExcursionGrid({ selectedDay, isLoading, loadingProgress = 0 }: ExcursionGridProps) {
-  const [selectedExcursion, setSelectedExcursion] = useState<typeof mockExcursions[0] | null>(null)
+export function ExcursionGrid({ selectedDay, isLoading, loadingProgress = 0, excursions }: ExcursionGridProps) {
+  const [selectedExcursion, setSelectedExcursion] = useState<ExcursionData | null>(null)
 
-  const filteredExcursions = mockExcursions.filter(exc => exc.day === selectedDay)
+  // For now, show all excursions (day filtering will be enhanced later)
+  const displayExcursions = excursions
 
   if (isLoading) {
     return (
@@ -91,9 +47,9 @@ export function ExcursionGrid({ selectedDay, isLoading, loadingProgress = 0 }: E
     <>
       <div className="space-y-0">
         <h2 className="text-lg font-semibold mb-4">
-          {filteredExcursions.length} Excursions Available
+          {displayExcursions.length} Excursions Available
         </h2>
-        {filteredExcursions.map((excursion, index) => (
+        {displayExcursions.map((excursion, index) => (
           <ExcursionCard
             key={excursion.id}
             excursion={excursion}
@@ -101,9 +57,9 @@ export function ExcursionGrid({ selectedDay, isLoading, loadingProgress = 0 }: E
             index={index}
           />
         ))}
-        {filteredExcursions.length === 0 && (
+        {displayExcursions.length === 0 && (
           <div className="text-center py-12 text-muted-foreground">
-            <p>No excursions found for this day</p>
+            <p>No excursions found</p>
           </div>
         )}
       </div>
