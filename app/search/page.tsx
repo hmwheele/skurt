@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import { Header } from "@/components/header"
+import { SearchModifier } from "@/components/search-modifier"
 import { Filterssidebar } from "@/components/filters-sidebar"
 import { ExcursionGrid } from "@/components/excursion-grid"
 import { DayTabs } from "@/components/day-tabs"
@@ -16,6 +17,12 @@ export default function SearchPage() {
   const [loadingProgress, setLoadingProgress] = useState(0)
   const [excursions, setExcursions] = useState<ExcursionData[]>([])
   const [usingMockData, setUsingMockData] = useState(false)
+
+  // Filter state
+  const [priceRange, setPriceRange] = useState([0, 1000])
+  const [selectedActivities, setSelectedActivities] = useState<string[]>([])
+  const [selectedDurations, setSelectedDurations] = useState<string[]>([])
+  const [minRating, setMinRating] = useState(0)
 
   const destination = searchParams.get("destination") || "Destination"
   const fromDate = searchParams.get("from")
@@ -62,6 +69,41 @@ export default function SearchPage() {
     fetchExcursions()
   }, [destination, fromDate, toDate])
 
+  // Apply filters to excursions
+  const filteredExcursions = useMemo(() => {
+    return excursions.filter(excursion => {
+      // Price filter
+      if (excursion.price < priceRange[0] || excursion.price > priceRange[1]) {
+        return false
+      }
+
+      // Activity type filter
+      if (selectedActivities.length > 0 && !selectedActivities.includes(excursion.category)) {
+        return false
+      }
+
+      // Duration filter
+      if (selectedDurations.length > 0) {
+        const durationMatch = selectedDurations.some(dur => {
+          const hours = parseFloat(excursion.duration)
+          if (dur === 'short' && hours < 2) return true
+          if (dur === 'medium' && hours >= 2 && hours < 4) return true
+          if (dur === 'long' && hours >= 4 && hours < 8) return true
+          if (dur === 'full' && hours >= 8) return true
+          return false
+        })
+        if (!durationMatch) return false
+      }
+
+      // Rating filter
+      if (minRating > 0 && excursion.rating < minRating) {
+        return false
+      }
+
+      return true
+    })
+  }, [excursions, priceRange, selectedActivities, selectedDurations, minRating])
+
   const dayCounts = useMemo(() => {
     const fromParam = searchParams.get("from")
     const toParam = searchParams.get("to")
@@ -79,14 +121,14 @@ export default function SearchPage() {
       endDate = addDays(startDate, numberOfDays - 1)
     }
 
-    // Generate tabs for each day in the range
+    // Generate tabs for each day in the range using filtered excursions
     return Array.from({ length: numberOfDays }, (_, i) => {
       const date = addDays(startDate, i)
       const dateStr = format(date, "MMM d")
       const dayNumber = i + 1
 
-      // Calculate actual count for this day
-      const count = excursions.filter(excursion => excursion.day === dayNumber || !excursion.day).length
+      // Calculate actual count for this day using filtered excursions
+      const count = filteredExcursions.filter(excursion => excursion.day === dayNumber || !excursion.day).length
 
       return {
         day: dayNumber,
@@ -94,17 +136,31 @@ export default function SearchPage() {
         count: count,
       }
     })
-  }, [searchParams, excursions])
+  }, [searchParams, filteredExcursions])
 
   return (
     <div className="min-h-screen">
       <Header />
+      <SearchModifier
+        initialDestination={destination}
+        initialFromDate={fromDate || undefined}
+        initialToDate={toDate || undefined}
+      />
       <main className="relative">
-        <div className="fixed left-0 top-[73px] bottom-0 w-[320px] z-10">
-          <Filterssidebar />
+        <div className="fixed left-0 top-[146px] bottom-0 w-[320px] z-10">
+          <Filterssidebar
+            priceRange={priceRange}
+            onPriceRangeChange={setPriceRange}
+            selectedActivities={selectedActivities}
+            onActivitiesChange={setSelectedActivities}
+            selectedDurations={selectedDurations}
+            onDurationsChange={setSelectedDurations}
+            minRating={minRating}
+            onMinRatingChange={setMinRating}
+          />
         </div>
         <div className="ml-[320px]">
-          <div className="sticky top-[73px] z-20 bg-background">
+          <div className="sticky top-[146px] z-20 bg-background">
             <div className="px-4 pt-6 pb-2">
               <h1 className="text-3xl font-bold font-sans">{destination}</h1>
               {usingMockData && !isLoading && (
@@ -125,7 +181,7 @@ export default function SearchPage() {
               selectedDay={selectedDay}
               isLoading={isLoading}
               loadingProgress={loadingProgress}
-              excursions={excursions}
+              excursions={filteredExcursions}
             />
           </div>
         </div>
