@@ -69,6 +69,11 @@ export function ExcursionPanel({ excursion, open, onClose }: ExcursionPanelProps
   const [imageLoaded, setImageLoaded] = useState(false)
   const [mapLoaded, setMapLoaded] = useState(false)
 
+  // Reset image loaded state when switching images
+  useEffect(() => {
+    setImageLoaded(false)
+  }, [currentImage])
+
   if (!excursion) return null
 
   // Use excursion images if available, otherwise use thumbnail as fallback
@@ -90,10 +95,8 @@ export function ExcursionPanel({ excursion, open, onClose }: ExcursionPanelProps
 
   const zoomLevel = getZoomLevel(excursion.location || '')
 
-  // Reset image loaded state when switching images
-  useEffect(() => {
-    setImageLoaded(false)
-  }, [currentImage])
+  // Get Mapbox token with proper fallback for client-side rendering
+  const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw'
 
   const handleSave = () => {
     const isLoggedIn = localStorage.getItem("isLoggedIn") === "true"
@@ -226,7 +229,7 @@ export function ExcursionPanel({ excursion, open, onClose }: ExcursionPanelProps
                 <h3 className="text-lg font-semibold mb-3">Location</h3>
                 <div className="aspect-video rounded-lg overflow-hidden bg-muted">
                   <img
-                    src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+ff0000(${encodeURIComponent(excursion.location || 'Paris, France')})/${encodeURIComponent(excursion.location || 'Paris, France')},${zoomLevel},0/800x450@2x?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN || 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw'}`}
+                    src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+ff0000(${encodeURIComponent(excursion.location || 'Paris, France')})/${encodeURIComponent(excursion.location || 'Paris, France')},${zoomLevel},0/800x450@2x?access_token=${mapboxToken}`}
                     alt={`Map of ${excursion.location}`}
                     className={cn(
                       "w-full h-full object-cover transition-opacity duration-500",
