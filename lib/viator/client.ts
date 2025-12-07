@@ -6,7 +6,7 @@ const VIATOR_API_BASE = 'https://api.viator.com/partner'
 // Source: Viator Partner API documentation
 const DESTINATION_MAPPING: Record<string, number> = {
   // North America - Major Cities
-  'san francisco': 646,
+  'san francisco': 1139,
   'new york': 684,
   'las vegas': 684,
   'los angeles': 684,
