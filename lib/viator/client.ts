@@ -5,10 +5,10 @@ const VIATOR_API_BASE = 'https://api.viator.com/partner'
 // Common destination IDs for Viator API
 // Source: Viator Partner API documentation
 const DESTINATION_MAPPING: Record<string, number> = {
-  // North America
+  // North America - Major Cities
+  'san francisco': 77,
   'new york': 684,
   'las vegas': 684,
-  'san francisco': 684,
   'los angeles': 684,
   'orlando': 684,
   'miami': 684,
@@ -197,6 +197,11 @@ export class ViatorClient {
       const products = data.products || data.data || data.results || []
       console.log('✅ Viator API returned', products.length, 'products')
 
+      // Log first product structure to help debug
+      if (products.length > 0) {
+        console.log('📦 First product structure:', JSON.stringify(products[0]).substring(0, 1000))
+      }
+
       return this.transformProducts(products)
     } catch (error) {
       console.error('❌ Viator API error:', error)
@@ -242,11 +247,23 @@ export class ViatorClient {
                              0
 
       // Extract up to 3 images - handle different structures
-      const productImages = product.images || product.thumbnailHiResURL ? [{ imageSource: product.thumbnailHiResURL }] : []
-      const images = productImages
-        .slice(0, 3)
-        .map((img: any) => img.imageSource || img.url || img)
-        .filter(Boolean)
+      let images: string[] = []
+
+      if (Array.isArray(product.images) && product.images.length > 0) {
+        images = product.images
+          .slice(0, 3)
+          .map((img: any) => {
+            // Try different image field names
+            return img.imageSource || img.url || img.variants?.[0]?.url || (typeof img === 'string' ? img : null)
+          })
+          .filter(Boolean)
+      } else if (product.image?.url) {
+        images = [product.image.url]
+      } else if (product.thumbnailHiResURL) {
+        images = [product.thumbnailHiResURL]
+      } else if (product.thumbnailURL) {
+        images = [product.thumbnailURL]
+      }
 
       const price = product.pricing?.summary?.fromPrice ||
                    product.price?.amount ||
@@ -264,7 +281,12 @@ export class ViatorClient {
         provider: 'Viator',
         thumbnail: images[0] || product.thumbnailURL || product.thumbnailHiResURL || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=400&h=300&fit=crop',
         category: this.extractCategory(product.tags || product.categories || []),
-        location: product.location?.name || product.destinationName || 'Location not specified',
+        location: product.location?.name ||
+                 product.destinationName ||
+                 product.destination?.name ||
+                 product.locationInfo?.name ||
+                 product.address?.city ||
+                 'Location not specified',
         affiliateLink: this.generateAffiliateLink(
           product.productCode || product.code,
           product.productUrl || product.webURL
