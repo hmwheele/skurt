@@ -6,7 +6,7 @@ const VIATOR_API_BASE = 'https://api.viator.com/partner'
 // Source: Viator Partner API documentation
 const DESTINATION_MAPPING: Record<string, number> = {
   // North America - Major Cities
-  'san francisco': 77,
+  'san francisco': 646,
   'new york': 684,
   'las vegas': 684,
   'los angeles': 684,
@@ -63,6 +63,7 @@ const DESTINATION_MAPPING: Record<string, number> = {
 
 export class ViatorClient {
   private apiKey: string
+  private currentDestination: string = ''
 
   constructor(apiKey: string) {
     this.apiKey = apiKey
@@ -146,6 +147,9 @@ export class ViatorClient {
     try {
       // First, look up the destination ID
       console.log('🔍 Searching Viator API for:', params.destination)
+
+      // Store destination for use in product transformation
+      this.currentDestination = params.destination
 
       const destinationId = await this.searchDestination(params.destination)
 
@@ -266,8 +270,13 @@ export class ViatorClient {
         images = product.images
           .slice(0, 3)
           .map((img: any) => {
-            // Try different image field names
-            return img.imageSource || img.url || img.variants?.[0]?.url || (typeof img === 'string' ? img : null)
+            // If variants exist, get a large variant (674x446 or 720x480)
+            if (img.variants && Array.isArray(img.variants)) {
+              // Try to get 674x446 (index 6) or 720x480 (index 7), fallback to largest available
+              return img.variants[6]?.url || img.variants[7]?.url || img.variants[img.variants.length - 1]?.url
+            }
+            // Fallback to other field names
+            return img.imageSource || img.url || (typeof img === 'string' ? img : null)
           })
           .filter(Boolean)
       } else if (product.image?.url) {
@@ -294,7 +303,8 @@ export class ViatorClient {
         provider: 'Viator',
         thumbnail: images[0] || product.thumbnailURL || product.thumbnailHiResURL || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=400&h=300&fit=crop',
         category: this.extractCategory(product.tags || product.categories || []),
-        location: product.location?.name ||
+        location: this.currentDestination ||
+                 product.location?.name ||
                  product.destinationName ||
                  product.destination?.name ||
                  product.locationInfo?.name ||
