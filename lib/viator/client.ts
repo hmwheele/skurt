@@ -15,25 +15,25 @@ export class ViatorClient {
    */
   async searchProducts(params: ViatorSearchParams): Promise<ExcursionData[]> {
     try {
-      // Using Viator's /search/freetext endpoint
+      // Using Viator Partner API /products/search endpoint
       console.log('🔍 Searching Viator API for:', params.destination)
 
-      const response = await fetch(`${VIATOR_API_BASE}/${VIATOR_API_VERSION}/search/freetext`, {
+      const response = await fetch(`${VIATOR_API_BASE}/${VIATOR_API_VERSION}/products/search`, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
-          'Accept-Language': 'en-US',
           'Content-Type': 'application/json',
           'exp-api-key': this.apiKey,
         },
         body: JSON.stringify({
           searchTerm: params.destination,
           currency: params.currency || 'USD',
-          startDate: params.startDate,
-          endDate: params.endDate,
-          topX: '1-20', // Get top 20 results
-          destId: null,
-          catId: null,
+          pagination: {
+            offset: ((params.page || 1) - 1) * (params.limit || 20),
+            limit: params.limit || 20,
+          },
+          ...(params.startDate && { startDate: params.startDate }),
+          ...(params.endDate && { endDate: params.endDate }),
         }),
       })
 
@@ -46,10 +46,12 @@ export class ViatorClient {
       }
 
       const data = await response.json()
-      console.log('✅ Viator API returned', data.data?.length || 0, 'products')
+      console.log('✅ Viator API data:', JSON.stringify(data).substring(0, 200))
 
-      // Viator returns products in data array
-      const products = data.data || []
+      // Try different possible response structures
+      const products = data.products || data.data || data.results || []
+      console.log('✅ Viator API returned', products.length, 'products')
+
       return this.transformProducts(products)
     } catch (error) {
       console.error('❌ Viator API error:', error)
