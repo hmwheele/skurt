@@ -18,14 +18,16 @@ export class ViatorClient {
       console.log('🔍 Searching Viator API for:', params.destination)
 
       const requestBody = {
-        searchTerm: params.destination,
+        filtering: {
+          searchTerm: params.destination,
+          ...(params.startDate && { startDate: params.startDate }),
+          ...(params.endDate && { endDate: params.endDate }),
+        },
         currency: params.currency || 'USD',
         pagination: {
           offset: ((params.page || 1) - 1) * (params.limit || 20),
           limit: params.limit || 20,
         },
-        ...(params.startDate && { startDate: params.startDate }),
-        ...(params.endDate && { endDate: params.endDate }),
       }
 
       console.log('📤 Viator API request body:', JSON.stringify(requestBody, null, 2))
