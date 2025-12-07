@@ -10,16 +10,65 @@ export class ViatorClient {
   }
 
   /**
+   * Search for destination ID by name
+   */
+  private async searchDestination(destinationName: string): Promise<number | null> {
+    try {
+      console.log('🔍 Looking up destination ID for:', destinationName)
+
+      const response = await fetch(`${VIATOR_API_BASE}/taxonomy/destinations`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json;version=2.0',
+          'Accept-Language': 'en-US',
+          'Content-Type': 'application/json',
+          'exp-api-key': this.apiKey,
+        },
+        body: JSON.stringify({
+          searchTerm: destinationName,
+        }),
+      })
+
+      if (!response.ok) {
+        console.error('❌ Destination lookup failed:', response.status)
+        return null
+      }
+
+      const data = await response.json()
+      const destinations = data.destinations || data.data || []
+
+      if (destinations.length > 0) {
+        const destinationId = destinations[0].destinationId || destinations[0].id
+        console.log('✅ Found destination ID:', destinationId, 'for', destinationName)
+        return destinationId
+      }
+
+      console.warn('⚠️ No destination found for:', destinationName)
+      return null
+    } catch (error) {
+      console.error('❌ Destination lookup error:', error)
+      return null
+    }
+  }
+
+  /**
    * Search for products by destination
    */
   async searchProducts(params: ViatorSearchParams): Promise<ExcursionData[]> {
     try {
-      // Using Viator Partner API /products/search endpoint
+      // First, look up the destination ID
       console.log('🔍 Searching Viator API for:', params.destination)
+
+      const destinationId = await this.searchDestination(params.destination)
+
+      if (!destinationId) {
+        console.error('❌ Could not find destination ID for:', params.destination)
+        throw new Error(`Destination not found: ${params.destination}`)
+      }
 
       const requestBody = {
         filtering: {
-          destination: params.destination,
+          destination: destinationId,
           ...(params.startDate && { startDate: params.startDate }),
           ...(params.endDate && { endDate: params.endDate }),
         },
