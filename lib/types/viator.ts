@@ -63,4 +63,6 @@ export interface ExcursionData {
   category: string
   location?: string
   affiliateLink: string
+  day?: number
+  images?: string[]
 }

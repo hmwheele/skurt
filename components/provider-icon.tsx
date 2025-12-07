@@ -6,26 +6,38 @@ interface ProviderIconProps {
 }
 
 export function ProviderIcon({ provider, className }: ProviderIconProps) {
-  const getProviderColor = (provider: string) => {
+  const getProviderUrl = (provider: string) => {
     switch (provider.toLowerCase()) {
       case "viator":
-        return "bg-blue-600"
+        return "viator.com"
       case "getyourguide":
-        return "bg-red-600"
+        return "getyourguide.com"
       case "klook":
-        return "bg-orange-600"
+        return "klook.com"
       case "kkday":
-        return "bg-green-600"
+        return "kkday.com"
       default:
-        return "bg-gray-600"
+        return null
     }
   }
 
+  const providerUrl = getProviderUrl(provider)
+
+  if (providerUrl) {
+    return (
+      <img
+        src={`https://www.google.com/s2/favicons?domain=${providerUrl}&sz=64`}
+        alt={`${provider} icon`}
+        className={cn("rounded-sm", className)}
+      />
+    )
+  }
+
+  // Fallback for unknown providers
   return (
     <div
       className={cn(
-        "rounded-full flex items-center justify-center text-white text-xs font-bold",
-        getProviderColor(provider),
+        "rounded-full flex items-center justify-center text-white text-xs font-bold bg-gray-600",
         className
       )}
     >

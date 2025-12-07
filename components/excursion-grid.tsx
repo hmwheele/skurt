@@ -18,7 +18,7 @@ export function ExcursionGrid({ selectedDay, isLoading = false, loadingProgress 
   const [selectedExcursion, setSelectedExcursion] = useState<ExcursionData | null>(null)
   const [revealedCount, setRevealedCount] = useState(0)
 
-  const filteredExcursions = excursions
+  const filteredExcursions = excursions.filter(excursion => excursion.day === selectedDay || !excursion.day)
 
   useEffect(() => {
     if (isLoading) {

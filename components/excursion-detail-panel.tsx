@@ -23,16 +23,11 @@ interface ExcursionPanelProps {
     thumbnail: string
     location: string
     category: string
+    images?: string[]
   } | null
   open: boolean
   onClose: () => void
 }
-
-const mockImages = [
-  "/travel-excursion-scenic-view-1.jpg",
-  "/travel-excursion-scenic-view-2.jpg",
-  "/travel-excursion-scenic-view-3.jpg",
-]
 
 const mockHighlights = [
   "Skip-the-line priority access",
@@ -73,6 +68,11 @@ export function ExcursionPanel({ excursion, open, onClose }: ExcursionPanelProps
 
   if (!excursion) return null
 
+  // Use excursion images if available, otherwise use thumbnail as fallback
+  const displayImages = excursion.images && excursion.images.length > 0
+    ? excursion.images
+    : [excursion.thumbnail]
+
   const handleSave = () => {
     const isLoggedIn = localStorage.getItem("isLoggedIn") === "true"
     if (!isLoggedIn) {
@@ -96,22 +96,24 @@ export function ExcursionPanel({ excursion, open, onClose }: ExcursionPanelProps
             {/* Image carousel */}
             <div className="relative aspect-[16/10] overflow-hidden">
               <img
-                src={mockImages[currentImage] || "/placeholder.svg"}
+                src={displayImages[currentImage]}
                 alt={excursion.title}
                 className="h-full w-full object-cover"
               />
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                {mockImages.map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setCurrentImage(i)}
-                    className={cn(
-                      "h-2 w-2 rounded-full transition-all",
-                      i === currentImage ? "bg-white w-8" : "bg-white/60",
-                    )}
-                  />
-                ))}
-              </div>
+              {displayImages.length > 1 && (
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                  {displayImages.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setCurrentImage(i)}
+                      className={cn(
+                        "h-2 w-2 rounded-full transition-all",
+                        i === currentImage ? "bg-white w-8" : "bg-white/60",
+                      )}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="p-6 space-y-6">
