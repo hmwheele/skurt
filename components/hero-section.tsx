@@ -10,17 +10,7 @@ import { CalendarIcon, Search, MapPin } from "lucide-react"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import type { DateRange } from "react-day-picker"
-
-const destinations = [
-  "Paris, France",
-  "Tokyo, Japan",
-  "New York, USA",
-  "Bali, Indonesia",
-  "Barcelona, Spain",
-  "Dubai, UAE",
-  "Rome, Italy",
-  "Iceland",
-]
+import { searchDestinations } from "@/lib/destinations"
 
 export function HeroSection() {
   const router = useRouter()
@@ -28,9 +18,27 @@ export function HeroSection() {
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [dateRange, setDateRange] = useState<DateRange | undefined>()
 
-  const filteredDestinations = destinations.filter((d) => d.toLowerCase().includes(destination.toLowerCase()))
+  const filteredDestinations = searchDestinations(destination, 10)
 
   const handleSearch = () => {
+    // Save to recent searches
+    if (destination) {
+      const recentSearches = JSON.parse(localStorage.getItem("recentSearches") || "[]")
+      const newSearch = {
+        destination,
+        dates: dateRange?.from && dateRange?.to
+          ? `${format(dateRange.from, "MMM d")} - ${format(dateRange.to, "MMM d, yyyy")}`
+          : dateRange?.from
+          ? format(dateRange.from, "MMM d, yyyy")
+          : null,
+        timestamp: Date.now(),
+      }
+
+      // Add to beginning and keep only last 6 searches
+      const updatedSearches = [newSearch, ...recentSearches.filter((s: any) => s.destination !== destination)].slice(0, 6)
+      localStorage.setItem("recentSearches", JSON.stringify(updatedSearches))
+    }
+
     const params = new URLSearchParams()
     if (destination) params.set("destination", destination)
     if (dateRange?.from) params.set("from", dateRange.from.toISOString())
