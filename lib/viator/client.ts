@@ -84,6 +84,11 @@ export class ViatorClient {
                            product.duration?.variableDurationFromMinutes ||
                            0
 
+    // Extract up to 3 images
+    const images = product.images
+      .slice(0, 3)
+      .map(img => img.imageSource)
+
     return {
       id: product.productCode,
       title: product.title,
@@ -93,10 +98,11 @@ export class ViatorClient {
       reviewCount: product.reviews.totalReviews,
       duration: this.formatDuration(durationMinutes),
       provider: 'Viator',
-      thumbnail: product.images[0]?.imageSource || '/placeholder.svg',
+      thumbnail: product.images[0]?.imageSource || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=400&h=300&fit=crop',
       category: this.extractCategory(product.tags),
       location: product.location?.name,
       affiliateLink: this.generateAffiliateLink(product.productCode, product.productUrl),
+      images: images.length > 0 ? images : undefined,
     }
   }
 

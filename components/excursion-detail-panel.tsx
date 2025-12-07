@@ -1,14 +1,16 @@
 "use client"
 
+import { useState } from "react"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Star, Heart, Clock, MapPin, Users, ExternalLink } from "lucide-react"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Star, Heart, Clock, MapPin, Calendar, Users, CheckCircle2, Plus } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { ProviderIcon } from "@/components/provider-icon"
-import { useState } from "react"
+import { AuthModal } from "@/components/auth-modal"
 
-interface ExcursionDetailPanelProps {
+interface ExcursionPanelProps {
   excursion: {
     id: string
     title: string
@@ -19,146 +21,245 @@ interface ExcursionDetailPanelProps {
     duration: string
     provider: string
     thumbnail: string
+    location: string
     category: string
-    location?: string
+    images?: string[]
   } | null
   open: boolean
-  onOpenChange: (open: boolean) => void
+  onClose: () => void
 }
 
-export function ExcursionDetailPanel({ excursion, open, onOpenChange }: ExcursionDetailPanelProps) {
+const mockHighlights = [
+  "Skip-the-line priority access",
+  "Expert local guide included",
+  "Small group size (max 12 people)",
+  "Hotel pickup and drop-off",
+  "Free cancellation up to 24 hours",
+]
+
+const mockReviews = [
+  {
+    id: "1",
+    author: "Sarah M.",
+    rating: 5,
+    date: "Dec 2024",
+    comment: "Absolutely amazing experience! Our guide was knowledgeable and friendly.",
+  },
+  {
+    id: "2",
+    author: "John D.",
+    rating: 5,
+    date: "Nov 2024",
+    comment: "Worth every penny. The views were breathtaking and well organized.",
+  },
+  {
+    id: "3",
+    author: "Emma L.",
+    rating: 4,
+    date: "Nov 2024",
+    comment: "Great tour overall. Only wish we had more time at each location.",
+  },
+]
+
+export function ExcursionPanel({ excursion, open, onClose }: ExcursionPanelProps) {
+  const [currentImage, setCurrentImage] = useState(0)
   const [isSaved, setIsSaved] = useState(false)
+  const [showAuthModal, setShowAuthModal] = useState(false)
 
   if (!excursion) return null
 
-  const handleBookNow = () => {
-    // TODO: Implement affiliate link redirect
-    // For now, just log
-    console.log("Booking excursion:", excursion.id, excursion.provider)
+  // Use excursion images if available, otherwise use thumbnail as fallback
+  const displayImages = excursion.images && excursion.images.length > 0
+    ? excursion.images
+    : [excursion.thumbnail]
+
+  const handleSave = () => {
+    const isLoggedIn = localStorage.getItem("isLoggedIn") === "true"
+    if (!isLoggedIn) {
+      setShowAuthModal(true)
+      return
+    }
+    setIsSaved(!isSaved)
+  }
+
+  const handleAuthSuccess = () => {
+    localStorage.setItem("isLoggedIn", "true")
+    setShowAuthModal(false)
+    setIsSaved(true)
   }
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto p-0">
-        <div className="relative">
-          {/* Image Header */}
-          <div className="relative h-64 w-full">
-            <img
-              src={excursion.thumbnail}
-              alt={excursion.title}
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute top-4 right-4">
-              <Button
-                variant="secondary"
-                size="icon"
-                className="rounded-full"
-                onClick={() => setIsSaved(!isSaved)}
-              >
-                <Heart className={isSaved ? "fill-current text-red-500" : ""} />
-              </Button>
-            </div>
-          </div>
-
-          {/* Content */}
-          <div className="p-6 space-y-6">
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <ProviderIcon provider={excursion.provider} className="h-6 w-6" />
-                <span className="text-sm text-muted-foreground">{excursion.provider}</span>
-                <Badge variant="secondary">{excursion.category}</Badge>
-              </div>
-
-              <SheetHeader>
-                <SheetTitle className="text-2xl">{excursion.title}</SheetTitle>
-              </SheetHeader>
-
-              <div className="flex items-center gap-4 mt-3">
-                <div className="flex items-center gap-1">
-                  <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-                  <span className="font-medium">{excursion.rating}</span>
-                  <span className="text-sm text-muted-foreground">
-                    ({excursion.reviewCount} reviews)
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Quick Info */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="text-sm font-medium">Duration</p>
-                  <p className="text-sm text-muted-foreground">{excursion.duration}</p>
-                </div>
-              </div>
-              {excursion.location && (
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-medium">Location</p>
-                    <p className="text-sm text-muted-foreground">{excursion.location}</p>
-                  </div>
+    <>
+      <Sheet open={open} onOpenChange={onClose}>
+        <SheetContent className="w-full sm:max-w-2xl p-0 overflow-hidden">
+          <ScrollArea className="h-full">
+            {/* Image carousel */}
+            <div className="relative aspect-[16/10] overflow-hidden">
+              <img
+                src={displayImages[currentImage]}
+                alt={excursion.title}
+                className="h-full w-full object-cover"
+              />
+              {displayImages.length > 1 && (
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                  {displayImages.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setCurrentImage(i)}
+                      className={cn(
+                        "h-2 w-2 rounded-full transition-all",
+                        i === currentImage ? "bg-white w-8" : "bg-white/60",
+                      )}
+                    />
+                  ))}
                 </div>
               )}
             </div>
 
-            <Separator />
-
-            {/* Description */}
-            <div>
-              <h3 className="font-semibold text-lg mb-2">Description</h3>
-              <p className="text-muted-foreground">{excursion.description}</p>
-            </div>
-
-            {/* Highlights - Mock data */}
-            <div>
-              <h3 className="font-semibold text-lg mb-3">Highlights</h3>
-              <ul className="space-y-2">
-                <li className="flex items-start gap-2">
-                  <span className="text-primary mt-1">•</span>
-                  <span>Skip-the-line access for a hassle-free experience</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-primary mt-1">•</span>
-                  <span>Expert local guide with extensive knowledge</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-primary mt-1">•</span>
-                  <span>Small group size for a more intimate experience</span>
-                </li>
-              </ul>
-            </div>
-
-            <Separator />
-
-            {/* Pricing and CTA */}
-            <div className="sticky bottom-0 bg-background pt-4 border-t">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">From</p>
-                  <p className="text-3xl font-bold">${excursion.price}</p>
-                  <p className="text-sm text-muted-foreground">per person</p>
+            <div className="p-6 space-y-6">
+              <SheetHeader>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <ProviderIcon provider={excursion.provider} className="h-6 w-6" />
+                      <span className="text-sm font-medium text-muted-foreground">{excursion.provider}</span>
+                    </div>
+                    <SheetTitle className="text-2xl text-balance">{excursion.title}</SheetTitle>
+                    <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+                        <span className="font-medium text-foreground">{excursion.rating}</span>
+                        <span>({excursion.reviewCount} reviews)</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <MapPin className="h-4 w-4" />
+                        <span>{excursion.location}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={handleSave}
+                    className={cn(isSaved && "text-destructive")}
+                  >
+                    <Heart className={cn("h-5 w-5", isSaved && "fill-current")} />
+                  </Button>
                 </div>
-                <Button size="lg" onClick={handleBookNow} className="gap-2">
-                  Book Now
-                  <ExternalLink className="h-4 w-4" />
-                </Button>
+              </SheetHeader>
+
+              {/* Quick info */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-muted">
+                  <Clock className="h-5 w-5 text-primary" />
+                  <div>
+                    <p className="text-sm font-medium">Duration</p>
+                    <p className="text-sm text-muted-foreground">{excursion.duration}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-muted">
+                  <Users className="h-5 w-5 text-primary" />
+                  <div>
+                    <p className="text-sm font-medium">Group Size</p>
+                    <p className="text-sm text-muted-foreground">Small group</p>
+                  </div>
+                </div>
               </div>
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => console.log("Add to trip plan:", excursion.id)}
-              >
-                Add to Trip Plan
-              </Button>
+
+              <Separator />
+
+              {/* Description */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3">About this experience</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  {excursion.description}. Experience the best of what this destination has to offer with our carefully
+                  curated excursion. Our expert guides will ensure you have an unforgettable journey filled with amazing
+                  sights and memorable moments.
+                </p>
+              </div>
+
+              <Separator />
+
+              {/* Highlights */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3">What's included</h3>
+                <ul className="space-y-2">
+                  {mockHighlights.map((highlight, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                      <span className="text-muted-foreground">{highlight}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <Separator />
+
+              {/* Location map placeholder */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Location</h3>
+                <div className="aspect-video rounded-lg bg-muted flex items-center justify-center">
+                  <div className="text-center">
+                    <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">{excursion.location}</p>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Reviews */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Reviews</h3>
+                <div className="space-y-4">
+                  {mockReviews.map((review) => (
+                    <div key={review.id} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{review.author}</span>
+                          <span className="text-sm text-muted-foreground">{review.date}</span>
+                        </div>
+                        <div className="flex">
+                          {Array.from({ length: review.rating }).map((_, i) => (
+                            <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
+                          ))}
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground">{review.comment}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Pricing and CTAs */}
+              <div className="sticky bottom-0 left-0 right-0 bg-background border-t border-border p-6 -mx-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <span className="text-sm text-muted-foreground">From </span>
+                    <span className="text-3xl font-bold">${excursion.price}</span>
+                    <span className="text-sm text-muted-foreground"> /person</span>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <Button className="flex-1" size="lg">
+                    <Calendar className="mr-2 h-5 w-5" />
+                    Book Now
+                  </Button>
+                  <Button variant="outline" size="lg">
+                    <Plus className="mr-2 h-5 w-5" />
+                    Add to Trip
+                  </Button>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      </SheetContent>
-    </Sheet>
+          </ScrollArea>
+        </SheetContent>
+      </Sheet>
+
+      {/* Auth Modal */}
+      <AuthModal open={showAuthModal} onOpenChange={setShowAuthModal} onSuccess={handleAuthSuccess} />
+    </>
   )
 }

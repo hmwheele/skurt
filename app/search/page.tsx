@@ -85,9 +85,8 @@ export default function SearchPage() {
       const dateStr = format(date, "MMM d")
       const dayNumber = i + 1
 
-      // Calculate count based on actual excursions (distribute evenly)
-      const excursionsPerDay = Math.ceil(excursions.length / numberOfDays)
-      const count = excursions.length > 0 ? excursionsPerDay : 0
+      // Calculate actual count for this day
+      const count = excursions.filter(excursion => excursion.day === dayNumber || !excursion.day).length
 
       return {
         day: dayNumber,
@@ -95,7 +94,7 @@ export default function SearchPage() {
         count: count,
       }
     })
-  }, [searchParams, excursions.length])
+  }, [searchParams, excursions])
 
   return (
     <div className="min-h-screen">
