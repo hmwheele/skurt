@@ -122,6 +122,16 @@ export function ExcursionPanel({ excursion, open, onClose }: ExcursionPanelProps
     setIsSaved(true)
   }
 
+  const handleAddToTrip = () => {
+    const isLoggedIn = localStorage.getItem("isLoggedIn") === "true"
+    if (!isLoggedIn) {
+      setShowAuthModal(true)
+      return
+    }
+    // Navigate to trips page
+    window.location.href = "/trips"
+  }
+
   return (
     <>
       <Sheet open={open} onOpenChange={onClose}>
@@ -304,7 +314,7 @@ export function ExcursionPanel({ excursion, open, onClose }: ExcursionPanelProps
                       Book Now
                     </a>
                   </Button>
-                  <Button variant="outline" size="lg">
+                  <Button variant="outline" size="lg" onClick={handleAddToTrip}>
                     <Plus className="mr-2 h-5 w-5" />
                     Add to Trip
                   </Button>
