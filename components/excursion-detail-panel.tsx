@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -66,6 +66,8 @@ export function ExcursionPanel({ excursion, open, onClose }: ExcursionPanelProps
   const [currentImage, setCurrentImage] = useState(0)
   const [isSaved, setIsSaved] = useState(false)
   const [showAuthModal, setShowAuthModal] = useState(false)
+  const [imageLoaded, setImageLoaded] = useState(false)
+  const [mapLoaded, setMapLoaded] = useState(false)
 
   if (!excursion) return null
 
@@ -88,6 +90,11 @@ export function ExcursionPanel({ excursion, open, onClose }: ExcursionPanelProps
 
   const zoomLevel = getZoomLevel(excursion.location || '')
 
+  // Reset image loaded state when switching images
+  useEffect(() => {
+    setImageLoaded(false)
+  }, [currentImage])
+
   const handleSave = () => {
     const isLoggedIn = localStorage.getItem("isLoggedIn") === "true"
     if (!isLoggedIn) {
@@ -109,11 +116,15 @@ export function ExcursionPanel({ excursion, open, onClose }: ExcursionPanelProps
         <SheetContent className="w-full sm:max-w-2xl p-0 overflow-hidden">
           <ScrollArea className="h-full">
             {/* Image carousel */}
-            <div className="relative aspect-[16/10] overflow-hidden">
+            <div className="relative aspect-[16/10] overflow-hidden bg-muted">
               <img
                 src={displayImages[currentImage]}
                 alt={excursion.title}
-                className="h-full w-full object-cover"
+                className={cn(
+                  "h-full w-full object-cover transition-opacity duration-500",
+                  imageLoaded ? "opacity-100" : "opacity-0"
+                )}
+                onLoad={() => setImageLoaded(true)}
               />
               {displayImages.length > 1 && (
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
@@ -215,9 +226,17 @@ export function ExcursionPanel({ excursion, open, onClose }: ExcursionPanelProps
                 <h3 className="text-lg font-semibold mb-3">Location</h3>
                 <div className="aspect-video rounded-lg overflow-hidden bg-muted">
                   <img
-                    src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+ff0000(${encodeURIComponent(excursion.location || 'Paris, France')})/${encodeURIComponent(excursion.location || 'Paris, France')},${zoomLevel},0/800x450@2x?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw`}
+                    src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+ff0000(${encodeURIComponent(excursion.location || 'Paris, France')})/${encodeURIComponent(excursion.location || 'Paris, France')},${zoomLevel},0/800x450@2x?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN || 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw'}`}
                     alt={`Map of ${excursion.location}`}
-                    className="w-full h-full object-cover"
+                    className={cn(
+                      "w-full h-full object-cover transition-opacity duration-500",
+                      mapLoaded ? "opacity-100" : "opacity-0"
+                    )}
+                    onLoad={() => setMapLoaded(true)}
+                    onError={(e) => {
+                      console.error('Map failed to load')
+                      setMapLoaded(true)
+                    }}
                   />
                 </div>
                 <div className="flex items-center gap-1 mt-2 text-sm text-muted-foreground">
