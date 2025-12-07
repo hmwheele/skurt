@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { ExcursionCard } from "@/components/excursion-card"
-import { ExcursionDetailPanel as ExcursionPanel } from "@/components/excursion-detail-panel"
+import { ExcursionPanel } from "@/components/excursion-detail-panel"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Progress } from "@/components/ui/progress"
 import type { ExcursionData } from "@/lib/types/viator"
@@ -94,7 +94,7 @@ export function ExcursionGrid({ selectedDay, isLoading = false, loadingProgress 
       <ExcursionPanel
         excursion={selectedExcursion}
         open={!!selectedExcursion}
-        onOpenChange={(open) => !open && setSelectedExcursion(null)}
+        onClose={() => setSelectedExcursion(null)}
       />
     </>
   )

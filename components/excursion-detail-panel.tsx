@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils"
 import { ProviderIcon } from "@/components/provider-icon"
 import { AuthModal } from "@/components/auth-modal"
 
-interface ExcursionDetailPanelProps {
+interface ExcursionPanelProps {
   excursion: {
     id: string
     title: string
@@ -25,7 +25,7 @@ interface ExcursionDetailPanelProps {
     category: string
   } | null
   open: boolean
-  onOpenChange: (open: boolean) => void
+  onClose: () => void
 }
 
 const mockImages = [
@@ -66,14 +66,12 @@ const mockReviews = [
   },
 ]
 
-export function ExcursionDetailPanel({ excursion, open, onOpenChange }: ExcursionDetailPanelProps) {
+export function ExcursionPanel({ excursion, open, onClose }: ExcursionPanelProps) {
   const [currentImage, setCurrentImage] = useState(0)
   const [isSaved, setIsSaved] = useState(false)
   const [showAuthModal, setShowAuthModal] = useState(false)
 
   if (!excursion) return null
-
-  const onClose = () => onOpenChange(false)
 
   const handleSave = () => {
     const isLoggedIn = localStorage.getItem("isLoggedIn") === "true"
@@ -92,7 +90,7 @@ export function ExcursionDetailPanel({ excursion, open, onOpenChange }: Excursio
 
   return (
     <>
-      <Sheet open={open} onOpenChange={onOpenChange}>
+      <Sheet open={open} onOpenChange={onClose}>
         <SheetContent className="w-full sm:max-w-2xl p-0 overflow-hidden">
           <ScrollArea className="h-full">
             {/* Image carousel */}
