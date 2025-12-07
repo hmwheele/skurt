@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import { Slider } from "@/components/ui/slider"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
@@ -26,10 +25,27 @@ const durations = [
   { id: "multi", label: "Multi-day" },
 ]
 
-export function Filterssidebar() {
-  const [priceRange, setPriceRange] = useState([0, 500])
-  const [selectedActivities, setSelectedActivities] = useState<string[]>([])
-  const [selectedDurations, setSelectedDurations] = useState<string[]>([])
+interface FiltersSidebarProps {
+  priceRange: number[]
+  onPriceRangeChange: (value: number[]) => void
+  selectedActivities: string[]
+  onActivitiesChange: (activities: string[]) => void
+  selectedDurations: string[]
+  onDurationsChange: (durations: string[]) => void
+  minRating: number
+  onMinRatingChange: (rating: number) => void
+}
+
+export function Filterssidebar({
+  priceRange,
+  onPriceRangeChange,
+  selectedActivities,
+  onActivitiesChange,
+  selectedDurations,
+  onDurationsChange,
+  minRating,
+  onMinRatingChange,
+}: FiltersSidebarProps) {
 
   return (
     <ScrollArea className="h-full border-r bg-background">
@@ -49,7 +65,7 @@ export function Filterssidebar() {
             </p>
             <Slider
               value={priceRange}
-              onValueChange={setPriceRange}
+              onValueChange={onPriceRangeChange}
               min={0}
               max={1000}
               step={10}
@@ -70,9 +86,9 @@ export function Filterssidebar() {
                 checked={selectedActivities.includes(type)}
                 onCheckedChange={(checked) => {
                   if (checked) {
-                    setSelectedActivities([...selectedActivities, type])
+                    onActivitiesChange([...selectedActivities, type])
                   } else {
-                    setSelectedActivities(selectedActivities.filter(t => t !== type))
+                    onActivitiesChange(selectedActivities.filter(t => t !== type))
                   }
                 }}
               />
@@ -95,9 +111,9 @@ export function Filterssidebar() {
                 checked={selectedDurations.includes(duration.id)}
                 onCheckedChange={(checked) => {
                   if (checked) {
-                    setSelectedDurations([...selectedDurations, duration.id])
+                    onDurationsChange([...selectedDurations, duration.id])
                   } else {
-                    setSelectedDurations(selectedDurations.filter(d => d !== duration.id))
+                    onDurationsChange(selectedDurations.filter(d => d !== duration.id))
                   }
                 }}
               />
@@ -114,13 +130,21 @@ export function Filterssidebar() {
         <div className="space-y-3">
           <h3 className="font-medium">Rating</h3>
           <div className="flex items-center space-x-2">
-            <Checkbox id="rating-4" />
+            <Checkbox
+              id="rating-4"
+              checked={minRating === 4}
+              onCheckedChange={(checked) => onMinRatingChange(checked ? 4 : 0)}
+            />
             <Label htmlFor="rating-4" className="text-sm font-normal cursor-pointer">
               4+ stars
             </Label>
           </div>
           <div className="flex items-center space-x-2">
-            <Checkbox id="rating-3" />
+            <Checkbox
+              id="rating-3"
+              checked={minRating === 3 && minRating !== 4}
+              onCheckedChange={(checked) => onMinRatingChange(checked ? 3 : 0)}
+            />
             <Label htmlFor="rating-3" className="text-sm font-normal cursor-pointer">
               3+ stars
             </Label>
