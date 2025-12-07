@@ -196,14 +196,19 @@ export function ExcursionPanel({ excursion, open, onClose }: ExcursionPanelProps
 
               <Separator />
 
-              {/* Location map placeholder */}
+              {/* Location map */}
               <div>
                 <h3 className="text-lg font-semibold mb-3">Location</h3>
-                <div className="aspect-video rounded-lg bg-muted flex items-center justify-center">
-                  <div className="text-center">
-                    <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">{excursion.location}</p>
-                  </div>
+                <div className="aspect-video rounded-lg overflow-hidden bg-muted">
+                  <iframe
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    loading="lazy"
+                    allowFullScreen
+                    referrerPolicy="no-referrer-when-downgrade"
+                    src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodeURIComponent(excursion.location || '')}&zoom=13`}
+                  />
                 </div>
               </div>
 
