@@ -24,6 +24,7 @@ interface ExcursionPanelProps {
     location: string
     category: string
     images?: string[]
+    affiliateLink: string
   } | null
   open: boolean
   onClose: () => void
@@ -243,9 +244,15 @@ export function ExcursionPanel({ excursion, open, onClose }: ExcursionPanelProps
                   </div>
                 </div>
                 <div className="flex gap-3">
-                  <Button className="flex-1" size="lg">
-                    <Calendar className="mr-2 h-5 w-5" />
-                    Book Now
+                  <Button
+                    className="flex-1"
+                    size="lg"
+                    asChild
+                  >
+                    <a href={excursion.affiliateLink} target="_blank" rel="noopener noreferrer">
+                      <Calendar className="mr-2 h-5 w-5" />
+                      Book Now
+                    </a>
                   </Button>
                   <Button variant="outline" size="lg">
                     <Plus className="mr-2 h-5 w-5" />
