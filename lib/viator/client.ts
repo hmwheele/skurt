@@ -199,7 +199,20 @@ export class ViatorClient {
 
       // Log first product structure to help debug
       if (products.length > 0) {
-        console.log('📦 First product structure:', JSON.stringify(products[0]).substring(0, 1000))
+        console.log('📦 First product keys:', Object.keys(products[0]))
+        console.log('📦 First product full:', JSON.stringify(products[0], null, 2))
+
+        // Log image-related fields specifically
+        if (products[0].images) {
+          console.log('📸 Images field:', JSON.stringify(products[0].images))
+        }
+
+        // Log location-related fields
+        console.log('📍 Location fields:', {
+          location: products[0].location,
+          destinationName: products[0].destinationName,
+          destination: products[0].destination,
+        })
       }
 
       return this.transformProducts(products)
@@ -305,7 +318,21 @@ export class ViatorClient {
    * Transform multiple products
    */
   private transformProducts(products: any[]): ExcursionData[] {
-    return products.map((product, index) => this.transformProduct(product, index))
+    const transformed: ExcursionData[] = []
+
+    for (let i = 0; i < products.length; i++) {
+      try {
+        const excursion = this.transformProduct(products[i], i)
+        transformed.push(excursion)
+      } catch (error) {
+        console.error(`⚠️ Failed to transform product ${i}:`, error)
+        console.error(`⚠️ Problem product:`, JSON.stringify(products[i]).substring(0, 500))
+        // Continue processing other products
+      }
+    }
+
+    console.log(`✅ Successfully transformed ${transformed.length} of ${products.length} products`)
+    return transformed
   }
 
   /**
