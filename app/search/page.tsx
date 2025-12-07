@@ -7,48 +7,60 @@ import { Filterssidebar } from "@/components/filters-sidebar"
 import { ExcursionGrid } from "@/components/excursion-grid"
 import { DayTabs } from "@/components/day-tabs"
 import { differenceInDays, addDays, format } from "date-fns"
-
-function hashDate(dateStr: string): number {
-  let hash = 0
-  for (let i = 0; i < dateStr.length; i++) {
-    const char = dateStr.charCodeAt(i)
-    hash = (hash << 5) - hash + char
-    hash = hash & hash
-  }
-  return Math.abs(hash)
-}
+import type { ExcursionData } from "@/lib/types/viator"
 
 export default function SearchPage() {
   const searchParams = useSearchParams()
   const [selectedDay, setSelectedDay] = useState(1)
   const [isLoading, setIsLoading] = useState(true)
   const [loadingProgress, setLoadingProgress] = useState(0)
+  const [excursions, setExcursions] = useState<ExcursionData[]>([])
+  const [usingMockData, setUsingMockData] = useState(false)
 
   const destination = searchParams.get("destination") || "Destination"
+  const fromDate = searchParams.get("from")
+  const toDate = searchParams.get("to")
 
+  // Fetch excursions from API
   useEffect(() => {
-    setIsLoading(true)
-    setLoadingProgress(0)
+    const fetchExcursions = async () => {
+      setIsLoading(true)
+      setLoadingProgress(0)
 
-    const progressInterval = setInterval(() => {
-      setLoadingProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(progressInterval)
-          return 100
-        }
-        return prev + 2 // Increment by 2 every 100ms to reach 100 in 5 seconds
-      })
-    }, 100)
+      const progressInterval = setInterval(() => {
+        setLoadingProgress((prev) => {
+          if (prev >= 90) {
+            clearInterval(progressInterval)
+            return 90
+          }
+          return prev + 10
+        })
+      }, 200)
 
-    const timer = setTimeout(() => {
-      setIsLoading(false)
-    }, 5000)
+      try {
+        const params = new URLSearchParams({
+          destination,
+        })
+        if (fromDate) params.set('from', fromDate)
+        if (toDate) params.set('to', toDate)
 
-    return () => {
-      clearTimeout(timer)
-      clearInterval(progressInterval)
+        const response = await fetch(`/api/search?${params.toString()}`)
+        const data = await response.json()
+
+        setExcursions(data.excursions || [])
+        setUsingMockData(data.usingMockData || false)
+        setLoadingProgress(100)
+      } catch (error) {
+        console.error('Failed to fetch excursions:', error)
+        setExcursions([])
+      } finally {
+        clearInterval(progressInterval)
+        setTimeout(() => setIsLoading(false), 300)
+      }
     }
-  }, [])
+
+    fetchExcursions()
+  }, [destination, fromDate, toDate])
 
   const dayCounts = useMemo(() => {
     const fromParam = searchParams.get("from")
@@ -73,23 +85,9 @@ export default function SearchPage() {
       const dateStr = format(date, "MMM d")
       const dayNumber = i + 1
 
-      // Import mock data to get actual counts
-      const mockExcursions = [
-        { id: "1", day: 1 },
-        { id: "2", day: 2 },
-        { id: "3", day: 1 },
-        { id: "4", day: 3 },
-        { id: "5", day: 2 },
-        { id: "6", day: 4 },
-        { id: "7", day: 1 },
-        { id: "8", day: 5 },
-        { id: "9", day: 3 },
-        { id: "10", day: 4 },
-        { id: "11", day: 5 },
-        { id: "12", day: 2 },
-      ]
-
-      const count = mockExcursions.filter((exc) => exc.day === dayNumber).length
+      // Calculate count based on actual excursions (distribute evenly)
+      const excursionsPerDay = Math.ceil(excursions.length / numberOfDays)
+      const count = excursions.length > 0 ? excursionsPerDay : 0
 
       return {
         day: dayNumber,
@@ -97,7 +95,7 @@ export default function SearchPage() {
         count: count,
       }
     })
-  }, [searchParams])
+  }, [searchParams, excursions.length])
 
   return (
     <div className="min-h-screen">
@@ -110,6 +108,11 @@ export default function SearchPage() {
           <div className="sticky top-[73px] z-20 bg-background">
             <div className="px-4 pt-6 pb-2">
               <h1 className="text-3xl font-bold font-sans">{destination}</h1>
+              {usingMockData && !isLoading && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  📦 Using demo data (Viator API will work in production)
+                </p>
+              )}
             </div>
             <DayTabs
               selectedDay={selectedDay}
@@ -119,7 +122,12 @@ export default function SearchPage() {
             />
           </div>
           <div className="px-4 py-8">
-            <ExcursionGrid selectedDay={selectedDay} isLoading={isLoading} loadingProgress={loadingProgress} />
+            <ExcursionGrid
+              selectedDay={selectedDay}
+              isLoading={isLoading}
+              loadingProgress={loadingProgress}
+              excursions={excursions}
+            />
           </div>
         </div>
       </main>
