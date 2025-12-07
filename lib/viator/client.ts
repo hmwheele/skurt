@@ -1,7 +1,6 @@
 import type { ViatorSearchParams, ViatorProduct, ExcursionData } from '@/lib/types/viator'
 
 const VIATOR_API_BASE = 'https://api.viator.com/partner'
-const VIATOR_API_VERSION = 'v1'
 
 export class ViatorClient {
   private apiKey: string
@@ -18,7 +17,7 @@ export class ViatorClient {
       // Using Viator Partner API /products/search endpoint
       console.log('🔍 Searching Viator API for:', params.destination)
 
-      const response = await fetch(`${VIATOR_API_BASE}/${VIATOR_API_VERSION}/products/search`, {
+      const response = await fetch(`${VIATOR_API_BASE}/products/search`, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
@@ -64,7 +63,7 @@ export class ViatorClient {
    */
   async getProductDetails(productCode: string): Promise<ExcursionData | null> {
     try {
-      const response = await fetch(`${VIATOR_API_BASE}/${VIATOR_API_VERSION}/product/${productCode}`, {
+      const response = await fetch(`${VIATOR_API_BASE}/products/${productCode}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
