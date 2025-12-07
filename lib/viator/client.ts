@@ -247,11 +247,23 @@ export class ViatorClient {
                              0
 
       // Extract up to 3 images - handle different structures
-      const productImages = product.images || product.thumbnailHiResURL ? [{ imageSource: product.thumbnailHiResURL }] : []
-      const images = productImages
-        .slice(0, 3)
-        .map((img: any) => img.imageSource || img.url || img)
-        .filter(Boolean)
+      let images: string[] = []
+
+      if (Array.isArray(product.images) && product.images.length > 0) {
+        images = product.images
+          .slice(0, 3)
+          .map((img: any) => {
+            // Try different image field names
+            return img.imageSource || img.url || img.variants?.[0]?.url || (typeof img === 'string' ? img : null)
+          })
+          .filter(Boolean)
+      } else if (product.image?.url) {
+        images = [product.image.url]
+      } else if (product.thumbnailHiResURL) {
+        images = [product.thumbnailHiResURL]
+      } else if (product.thumbnailURL) {
+        images = [product.thumbnailURL]
+      }
 
       const price = product.pricing?.summary?.fromPrice ||
                    product.price?.amount ||
@@ -269,7 +281,12 @@ export class ViatorClient {
         provider: 'Viator',
         thumbnail: images[0] || product.thumbnailURL || product.thumbnailHiResURL || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=400&h=300&fit=crop',
         category: this.extractCategory(product.tags || product.categories || []),
-        location: product.location?.name || product.destinationName || 'Location not specified',
+        location: product.location?.name ||
+                 product.destinationName ||
+                 product.destination?.name ||
+                 product.locationInfo?.name ||
+                 product.address?.city ||
+                 'Location not specified',
         affiliateLink: this.generateAffiliateLink(
           product.productCode || product.code,
           product.productUrl || product.webURL
