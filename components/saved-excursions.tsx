@@ -70,7 +70,12 @@ export function SavedExcursions() {
   return (
     <div className="space-y-0 border rounded-lg">
       {savedExcursions.map((excursion, index) => (
-        <ExcursionCard key={excursion.id} excursion={excursion} index={index} />
+        <ExcursionCard
+          key={excursion.id}
+          excursion={excursion}
+          index={index}
+          onUnsave={loadSavedExcursions}
+        />
       ))}
     </div>
   )

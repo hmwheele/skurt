@@ -27,9 +27,10 @@ interface ExcursionCardProps {
   }
   onClick?: () => void
   index?: number
+  onUnsave?: () => void
 }
 
-export function ExcursionCard({ excursion, onClick, index = 0 }: ExcursionCardProps) {
+export function ExcursionCard({ excursion, onClick, index = 0, onUnsave }: ExcursionCardProps) {
   const [isSaved, setIsSaved] = useState(false)
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
@@ -58,6 +59,7 @@ export function ExcursionCard({ excursion, onClick, index = 0 }: ExcursionCardPr
       if (isSaved) {
         await unsaveExcursion(excursion.id)
         setIsSaved(false)
+        onUnsave?.() // Notify parent component
       } else {
         await saveExcursion(excursion.id, excursion)
         setIsSaved(true)
