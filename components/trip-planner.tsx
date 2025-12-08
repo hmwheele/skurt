@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -27,6 +27,7 @@ export function TripPlanner() {
   const [creating, setCreating] = useState(false)
   const [expandedTrips, setExpandedTrips] = useState<Set<string>>(new Set())
   const [tripExcursions, setTripExcursions] = useState<Record<string, TripExcursion[]>>({})
+  const [loadingExcursions, setLoadingExcursions] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     loadTrips()
@@ -89,39 +90,67 @@ export function TripPlanner() {
     const newExpanded = new Set(expandedTrips)
     if (newExpanded.has(tripId)) {
       newExpanded.delete(tripId)
+      setLoadingExcursions(prev => {
+        const next = new Set(prev)
+        next.delete(tripId)
+        return next
+      })
     } else {
       newExpanded.add(tripId)
-      // Always reload excursions when expanding to get fresh data
+      // Load excursions when expanding
+      setLoadingExcursions(prev => new Set(prev).add(tripId))
       try {
         const excursions = await getTripExcursions(tripId)
         setTripExcursions(prev => ({ ...prev, [tripId]: excursions }))
       } catch (err) {
         console.error('Failed to load trip excursions:', err)
+      } finally {
+        setLoadingExcursions(prev => {
+          const next = new Set(prev)
+          next.delete(tripId)
+          return next
+        })
       }
     }
     setExpandedTrips(newExpanded)
   }
 
-  // Reload excursions for expanded trips
-  const reloadExpandedTrips = async () => {
-    for (const tripId of Array.from(expandedTrips)) {
-      try {
-        const excursions = await getTripExcursions(tripId)
-        setTripExcursions(prev => ({ ...prev, [tripId]: excursions }))
-      } catch (err) {
-        console.error('Failed to reload trip excursions:', err)
-      }
-    }
-  }
+  // Reload excursions for expanded trips (parallelized)
+  const reloadExpandedTrips = useCallback(async () => {
+    const tripIds = Array.from(expandedTrips)
+    if (tripIds.length === 0) return
 
-  // Listen for focus to reload data
-  useEffect(() => {
-    const handleFocus = () => {
-      reloadExpandedTrips()
-    }
-    window.addEventListener('focus', handleFocus)
-    return () => window.removeEventListener('focus', handleFocus)
+    // Parallelize fetches with Promise.all for better performance
+    await Promise.all(
+      tripIds.map(async (tripId) => {
+        try {
+          const excursions = await getTripExcursions(tripId)
+          setTripExcursions(prev => ({ ...prev, [tripId]: excursions }))
+        } catch (err) {
+          console.error('Failed to reload trip excursions:', err)
+        }
+      })
+    )
   }, [expandedTrips])
+
+  // Debounced focus handler to prevent excessive reloads
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout
+
+    const handleFocus = () => {
+      // Debounce by 500ms to prevent rapid reloads
+      clearTimeout(timeoutId)
+      timeoutId = setTimeout(() => {
+        reloadExpandedTrips()
+      }, 500)
+    }
+
+    window.addEventListener('focus', handleFocus)
+    return () => {
+      window.removeEventListener('focus', handleFocus)
+      clearTimeout(timeoutId)
+    }
+  }, [reloadExpandedTrips])
 
   if (loading) {
     return (
@@ -251,6 +280,7 @@ export function TripPlanner() {
       {trips.map((trip) => {
         const isExpanded = expandedTrips.has(trip.id)
         const excursions = tripExcursions[trip.id] || []
+        const isLoadingExcursions = loadingExcursions.has(trip.id)
 
         return (
           <Card key={trip.id} className="overflow-hidden">
@@ -273,6 +303,7 @@ export function TripPlanner() {
                     variant="ghost"
                     size="sm"
                     onClick={() => toggleTripExpanded(trip.id)}
+                    disabled={isLoadingExcursions}
                   >
                     {isExpanded ? (
                       <ChevronUp className="h-4 w-4" />
@@ -294,7 +325,11 @@ export function TripPlanner() {
 
             {isExpanded && (
               <div className="border-t p-6 bg-muted/20">
-                {excursions.length === 0 ? (
+                {isLoadingExcursions ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p>Loading excursions...</p>
+                  </div>
+                ) : excursions.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <Plus className="h-12 w-12 mx-auto mb-2 opacity-50" />
                     <p>No excursions added yet</p>
