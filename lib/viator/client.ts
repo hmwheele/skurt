@@ -164,8 +164,9 @@ export class ViatorClient {
       const requestBody = {
         filtering: {
           destination: destinationId,
-          ...(params.startDate && { startDate: params.startDate }),
-          ...(params.endDate && { endDate: params.endDate }),
+          // NOTE: Date filtering removed - it was too restrictive and limited results
+          // The API filters out products without confirmed availability for specific dates
+          // Users can check availability on the product detail page instead
         },
         currency: params.currency || 'USD',
         pagination: {
@@ -175,6 +176,9 @@ export class ViatorClient {
       }
 
       console.log('📤 Viator API request body:', JSON.stringify(requestBody, null, 2))
+      if (params.startDate && params.endDate) {
+        console.log(`ℹ️ Note: Date range ${params.startDate} to ${params.endDate} NOT used in API filter (prevents limiting results)`)
+      }
 
       const response = await fetch(`${VIATOR_API_BASE}/products/search`, {
         method: 'POST',
