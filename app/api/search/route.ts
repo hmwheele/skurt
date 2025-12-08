@@ -30,15 +30,47 @@ export async function GET(request: NextRequest) {
           startDate: startDate || undefined,
           endDate: endDate || undefined,
           page,
-          limit: 20,
+          limit: 100, // Increased from 20 to 100 for more results
         })
         results.push(...viatorResults)
         apiCallSuccessful = true
-        console.log(`✅ Viator API: Found ${viatorResults.length} results`)
+        console.log(`✅ Viator API: Found ${viatorResults.length} results for "${destination}"`)
+        console.log(`📊 Viator API: Requested limit=100, page=${page}`)
+
+        // Log if we got fewer results than expected
+        if (viatorResults.length < 10) {
+          console.warn(`⚠️ Viator API returned only ${viatorResults.length} results - this might indicate:`)
+          console.warn(`   - Limited availability for destination: ${destination}`)
+          console.warn(`   - Date range restrictions`)
+          console.warn(`   - API rate limiting`)
+        }
       } catch (error) {
         console.error('❌ Viator API error:', error)
-        // Continue with other providers even if Viator fails
+        // Return error response instead of falling back to mock data
+        return NextResponse.json(
+          {
+            error: 'Viator API error',
+            details: error instanceof Error ? error.message : 'Unknown error',
+            excursions: [],
+            total: 0,
+            page,
+            usingMockData: false
+          },
+          { status: 200 } // Return 200 with empty results instead of error
+        )
       }
+    } else {
+      console.error('❌ VIATOR_API_KEY not configured')
+      return NextResponse.json(
+        {
+          error: 'Viator API key not configured',
+          excursions: [],
+          total: 0,
+          page,
+          usingMockData: false
+        },
+        { status: 200 }
+      )
     }
 
     // TODO: Add GetYourGuide API when approved
@@ -48,12 +80,7 @@ export async function GET(request: NextRequest) {
     //   apiCallSuccessful = true
     // }
 
-    // Fallback to mock data if no API results (for local development/testing)
-    if (results.length === 0) {
-      console.log('📦 Using mock data (API unavailable or no results)')
-      const mockResults = getMockExcursions(destination)
-      results.push(...mockResults)
-    }
+    // No mock data fallback - only show real API results
 
     // Sort by rating (descending) then by price (ascending)
     results.sort((a, b) => {
