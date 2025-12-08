@@ -15,7 +15,7 @@ export interface TripExcursion {
   trip_plan_id: string
   excursion_id: string
   excursion_data: any
-  day?: number
+  day_number: number
   created_at: string
 }
 
@@ -85,9 +85,9 @@ export async function addExcursionToTrip(
   tripId: string,
   excursionId: string,
   excursionData: any,
-  day?: number
+  dayNumber: number = 1
 ) {
-  console.log('🔵 Adding excursion to trip:', { tripId, excursionId })
+  console.log('🔵 Adding excursion to trip:', { tripId, excursionId, dayNumber })
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -104,7 +104,7 @@ export async function addExcursionToTrip(
       trip_plan_id: tripId,
       excursion_id: excursionId,
       excursion_data: excursionData,
-      day,
+      day_number: dayNumber,
     })
     .select()
     .single()
@@ -137,7 +137,7 @@ export async function getTripExcursions(tripId: string) {
     .from('trip_plan_items')
     .select('*')
     .eq('trip_plan_id', tripId)
-    .order('day', { ascending: true, nullsFirst: false })
+    .order('day_number', { ascending: true })
     .order('created_at', { ascending: true })
 
   if (error) throw error
