@@ -12,7 +12,7 @@ export interface Trip {
 
 export interface TripExcursion {
   id: string
-  trip_id: string
+  trip_plan_id: string
   excursion_id: string
   excursion_data: any
   day?: number
@@ -101,7 +101,7 @@ export async function addExcursionToTrip(
   const { data, error } = await supabase
     .from('trip_plan_items')
     .insert({
-      trip_id: tripId,
+      trip_plan_id: tripId,
       excursion_id: excursionId,
       excursion_data: excursionData,
       day,
@@ -124,7 +124,7 @@ export async function removeExcursionFromTrip(tripId: string, excursionId: strin
   const { error } = await supabase
     .from('trip_plan_items')
     .delete()
-    .eq('trip_id', tripId)
+    .eq('trip_plan_id', tripId)
     .eq('excursion_id', excursionId)
 
   if (error) throw error
@@ -136,7 +136,7 @@ export async function getTripExcursions(tripId: string) {
   const { data, error } = await supabase
     .from('trip_plan_items')
     .select('*')
-    .eq('trip_id', tripId)
+    .eq('trip_plan_id', tripId)
     .order('day', { ascending: true, nullsFirst: false })
     .order('created_at', { ascending: true })
 
