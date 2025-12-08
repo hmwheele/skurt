@@ -9,6 +9,7 @@ import { Star, Heart, Clock, MapPin, Calendar, Users, CheckCircle2, Plus } from 
 import { cn } from "@/lib/utils"
 import { ProviderIcon } from "@/components/provider-icon"
 import { AuthModal } from "@/components/auth-modal"
+import { useAuth } from "@/lib/auth-context"
 
 interface ExcursionPanelProps {
   excursion: {
@@ -68,6 +69,7 @@ export function ExcursionPanel({ excursion, open, onClose }: ExcursionPanelProps
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
   const [mapLoaded, setMapLoaded] = useState(false)
+  const { user } = useAuth()
 
   // Reset image loaded state when switching images
   useEffect(() => {
@@ -108,8 +110,7 @@ export function ExcursionPanel({ excursion, open, onClose }: ExcursionPanelProps
   const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw'
 
   const handleSave = () => {
-    const isLoggedIn = localStorage.getItem("isLoggedIn") === "true"
-    if (!isLoggedIn) {
+    if (!user) {
       setShowAuthModal(true)
       return
     }
@@ -117,14 +118,12 @@ export function ExcursionPanel({ excursion, open, onClose }: ExcursionPanelProps
   }
 
   const handleAuthSuccess = () => {
-    localStorage.setItem("isLoggedIn", "true")
     setShowAuthModal(false)
     setIsSaved(true)
   }
 
   const handleAddToTrip = () => {
-    const isLoggedIn = localStorage.getItem("isLoggedIn") === "true"
-    if (!isLoggedIn) {
+    if (!user) {
       setShowAuthModal(true)
       return
     }
