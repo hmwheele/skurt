@@ -52,6 +52,8 @@ export function AddToTripModal({ open, onOpenChange, excursion, onSuccess }: Add
         const location = excursion.location?.name || excursion.destination?.name || excursion.location || ''
         if (location) {
           setDestination(location)
+          // Auto-generate trip name from destination
+          setTripName(`${location} Trip`)
         }
       }
 

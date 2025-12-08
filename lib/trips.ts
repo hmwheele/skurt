@@ -105,6 +105,7 @@ export async function addExcursionToTrip(
       excursion_id: excursionId,
       excursion_data: excursionData,
       day_number: dayNumber,
+      provider: excursionData.provider || 'Unknown',
     })
     .select()
     .single()
