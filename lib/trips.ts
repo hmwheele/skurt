@@ -25,10 +25,16 @@ export async function createTrip(tripData: {
   start_date: string
   end_date: string
 }) {
+  console.log('🔵 Creating trip:', tripData)
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  
-  if (!user) throw new Error('User not authenticated')
+
+  if (!user) {
+    console.error('❌ User not authenticated')
+    throw new Error('User not authenticated')
+  }
+
+  console.log('✅ User authenticated:', user.id)
 
   const { data, error } = await supabase
     .from('trips')
@@ -39,15 +45,26 @@ export async function createTrip(tripData: {
     .select()
     .single()
 
-  if (error) throw error
+  if (error) {
+    console.error('❌ Error creating trip:', error)
+    throw error
+  }
+
+  console.log('✅ Trip created:', data)
   return data
 }
 
 export async function getUserTrips() {
+  console.log('🔵 Getting user trips')
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  
-  if (!user) return []
+
+  if (!user) {
+    console.log('⚠️ No user, returning empty trips')
+    return []
+  }
+
+  console.log('✅ User authenticated:', user.id)
 
   const { data, error } = await supabase
     .from('trips')
@@ -55,7 +72,12 @@ export async function getUserTrips() {
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
 
-  if (error) throw error
+  if (error) {
+    console.error('❌ Error getting trips:', error)
+    throw error
+  }
+
+  console.log('✅ Found trips:', data?.length || 0)
   return data || []
 }
 
@@ -65,10 +87,16 @@ export async function addExcursionToTrip(
   excursionData: any,
   day?: number
 ) {
+  console.log('🔵 Adding excursion to trip:', { tripId, excursionId })
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  
-  if (!user) throw new Error('User not authenticated')
+
+  if (!user) {
+    console.error('❌ User not authenticated')
+    throw new Error('User not authenticated')
+  }
+
+  console.log('✅ User authenticated:', user.id)
 
   const { data, error } = await supabase
     .from('trip_excursions')
@@ -81,7 +109,12 @@ export async function addExcursionToTrip(
     .select()
     .single()
 
-  if (error) throw error
+  if (error) {
+    console.error('❌ Error adding excursion to trip:', error)
+    throw error
+  }
+
+  console.log('✅ Excursion added to trip:', data)
   return data
 }
 
