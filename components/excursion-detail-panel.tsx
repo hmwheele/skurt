@@ -9,6 +9,7 @@ import { Star, Heart, Clock, MapPin, Calendar, Users, CheckCircle2, Plus } from 
 import { cn } from "@/lib/utils"
 import { ProviderIcon } from "@/components/provider-icon"
 import { AuthModal } from "@/components/auth-modal"
+import { AddToTripModal } from "@/components/add-to-trip-modal"
 import { useAuth } from "@/lib/auth-context"
 import { saveExcursion, unsaveExcursion, isExcursionSaved } from "@/lib/saved-excursions"
 
@@ -68,6 +69,7 @@ export function ExcursionPanel({ excursion, open, onClose }: ExcursionPanelProps
   const [currentImage, setCurrentImage] = useState(0)
   const [isSaved, setIsSaved] = useState(false)
   const [showAuthModal, setShowAuthModal] = useState(false)
+  const [showTripModal, setShowTripModal] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
   const [mapLoaded, setMapLoaded] = useState(false)
   const { user } = useAuth()
@@ -154,8 +156,7 @@ export function ExcursionPanel({ excursion, open, onClose }: ExcursionPanelProps
       setShowAuthModal(true)
       return
     }
-    // Navigate to trips page
-    window.location.href = "/trips"
+    setShowTripModal(true)
   }
 
   return (
@@ -353,6 +354,14 @@ export function ExcursionPanel({ excursion, open, onClose }: ExcursionPanelProps
 
       {/* Auth Modal */}
       <AuthModal open={showAuthModal} onOpenChange={setShowAuthModal} onSuccess={handleAuthSuccess} />
+
+      {/* Add to Trip Modal */}
+      <AddToTripModal
+        open={showTripModal}
+        onOpenChange={setShowTripModal}
+        excursion={excursion}
+        onSuccess={() => console.log('Added to trip!')}
+      />
     </>
   )
 }
