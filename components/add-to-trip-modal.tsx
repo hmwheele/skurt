@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 import {
   Dialog,
   DialogContent,
@@ -13,8 +14,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Plus, Calendar } from "lucide-react"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar as CalendarComponent } from "@/components/ui/calendar"
+import { Plus, Calendar, CalendarIcon } from "lucide-react"
 import { getUserTrips, createTrip, addExcursionToTrip, type Trip } from "@/lib/trips"
+import { format } from "date-fns"
+import { cn } from "@/lib/utils"
+import type { DateRange } from "react-day-picker"
 
 interface AddToTripModalProps {
   open: boolean
@@ -24,16 +30,16 @@ interface AddToTripModalProps {
 }
 
 export function AddToTripModal({ open, onOpenChange, excursion, onSuccess }: AddToTripModalProps) {
+  const searchParams = useSearchParams()
   const [trips, setTrips] = useState<Trip[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
-  
+
   // New trip form
   const [tripName, setTripName] = useState("")
   const [destination, setDestination] = useState("")
-  const [startDate, setStartDate] = useState("")
-  const [endDate, setEndDate] = useState("")
+  const [dateRange, setDateRange] = useState<DateRange | undefined>()
 
   useEffect(() => {
     if (open) {
@@ -44,12 +50,22 @@ export function AddToTripModal({ open, onOpenChange, excursion, onSuccess }: Add
       // Auto-fill destination from excursion location
       if (excursion) {
         const location = excursion.location?.name || excursion.destination?.name || excursion.location || ''
-        if (location && !destination) {
+        if (location) {
           setDestination(location)
         }
       }
+
+      // Auto-fill dates from search params
+      const fromDate = searchParams.get('from')
+      const toDate = searchParams.get('to')
+      if (fromDate && toDate) {
+        setDateRange({
+          from: new Date(fromDate),
+          to: new Date(toDate),
+        })
+      }
     }
-  }, [open, excursion])
+  }, [open, excursion, searchParams])
 
   const loadTrips = async () => {
     try {
@@ -81,6 +97,12 @@ export function AddToTripModal({ open, onOpenChange, excursion, onSuccess }: Add
 
   const handleCreateTrip = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (!dateRange?.from || !dateRange?.to) {
+      setError("Please select start and end dates")
+      return
+    }
+
     setLoading(true)
     setError(null)
     setSuccessMessage(null)
@@ -89,18 +111,17 @@ export function AddToTripModal({ open, onOpenChange, excursion, onSuccess }: Add
       const newTrip = await createTrip({
         name: tripName,
         destination,
-        start_date: startDate,
-        end_date: endDate,
+        start_date: format(dateRange.from, 'yyyy-MM-dd'),
+        end_date: format(dateRange.to, 'yyyy-MM-dd'),
       })
-      
+
       await addExcursionToTrip(newTrip.id, excursion.id, excursion)
-      
+
       setSuccessMessage("Trip created and excursion added!")
       setTripName("")
       setDestination("")
-      setStartDate("")
-      setEndDate("")
-      
+      setDateRange(undefined)
+
       setTimeout(() => {
         onSuccess?.()
         onOpenChange(false)
@@ -190,33 +211,47 @@ export function AddToTripModal({ open, onOpenChange, excursion, onSuccess }: Add
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="start-date">Start Date</Label>
-                  <Input
-                    id="start-date"
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    required
-                    disabled={loading}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="end-date">End Date</Label>
-                  <Input
-                    id="end-date"
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    required
-                    disabled={loading}
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label>Date Range</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      disabled={loading}
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !dateRange && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dateRange?.from ? (
+                        dateRange.to ? (
+                          <>
+                            {format(dateRange.from, "LLL dd, y")} - {format(dateRange.to, "LLL dd, y")}
+                          </>
+                        ) : (
+                          format(dateRange.from, "LLL dd, y")
+                        )
+                      ) : (
+                        <span>Select dates</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      initialFocus
+                      mode="range"
+                      defaultMonth={dateRange?.from}
+                      selected={dateRange}
+                      onSelect={setDateRange}
+                      numberOfMonths={2}
+                      disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
 
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type="submit" className="w-full" disabled={loading || !tripName || !dateRange?.from || !dateRange?.to}>
                 <Plus className="mr-2 h-4 w-4" />
                 {loading ? "Creating..." : "Create Trip & Add"}
               </Button>
