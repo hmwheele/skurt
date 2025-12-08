@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { CalendarIcon, Plus, MapIcon, Trash2, ChevronDown, ChevronUp } from "lucide-react"
+import { CalendarIcon, Plus, MapIcon, Trash2, ChevronDown, ChevronUp, GripVertical, X } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { DateRange } from "react-day-picker"
@@ -292,22 +293,90 @@ export function TripPlanner() {
             </div>
 
             {isExpanded && (
-              <div className="border-t">
+              <div className="border-t p-6 bg-muted/20">
                 {excursions.length === 0 ? (
-                  <div className="p-6 text-center text-muted-foreground">
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Plus className="h-12 w-12 mx-auto mb-2 opacity-50" />
                     <p>No excursions added yet</p>
                     <p className="text-sm mt-2">Browse excursions and add them to this trip</p>
                   </div>
                 ) : (
-                  <div className="divide-y">
-                    {excursions.map((tripExcursion, index) => (
-                      <div key={tripExcursion.id} className="p-4">
-                        <ExcursionCard
-                          excursion={tripExcursion.excursion_data}
-                          index={index}
-                        />
+                  <div className="space-y-6">
+                    {/* Total Cost Summary */}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Total Estimated Cost</p>
+                        <p className="text-2xl font-bold">
+                          ${excursions.reduce((sum, e) => sum + (e.excursion_data.price || 0), 0).toFixed(2)}
+                        </p>
                       </div>
-                    ))}
+                    </div>
+
+                    {/* Organize excursions by day */}
+                    {(() => {
+                      const dayGroups: { [key: number]: TripExcursion[] } = {}
+                      excursions.forEach(exc => {
+                        const day = exc.day_number || 1
+                        if (!dayGroups[day]) dayGroups[day] = []
+                        dayGroups[day].push(exc)
+                      })
+
+                      const days = Object.keys(dayGroups).map(Number).sort((a, b) => a - b)
+
+                      return days.map(dayNum => (
+                        <Card key={dayNum} className="bg-background">
+                          <div className="p-4 border-b">
+                            <div className="flex items-center justify-between">
+                              <h4 className="font-semibold">Day {dayNum}</h4>
+                              <Badge variant="outline">
+                                {dayGroups[dayNum].length} {dayGroups[dayNum].length === 1 ? 'activity' : 'activities'}
+                              </Badge>
+                            </div>
+                          </div>
+                          <div className="p-4">
+                            <div className="space-y-3">
+                              {dayGroups[dayNum].map((tripExcursion) => (
+                                <div
+                                  key={tripExcursion.id}
+                                  className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                                >
+                                  <GripVertical className="h-5 w-5 text-muted-foreground cursor-move" />
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-start justify-between gap-3">
+                                      <div className="flex-1 min-w-0">
+                                        <h5 className="font-medium truncate">{tripExcursion.excursion_data.title}</h5>
+                                        <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
+                                          <span>{tripExcursion.excursion_data.duration || 'Duration varies'}</span>
+                                          <span>•</span>
+                                          <span>{tripExcursion.excursion_data.provider || 'Unknown'}</span>
+                                        </div>
+                                      </div>
+                                      <div className="text-right shrink-0">
+                                        <p className="font-semibold">${tripExcursion.excursion_data.price?.toFixed(2) || '0.00'}</p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <Button variant="ghost" size="icon" className="shrink-0">
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </Card>
+                      ))
+                    })()}
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-3 pt-2">
+                      <Button className="flex-1" size="lg" disabled>
+                        <CalendarIcon className="mr-2 h-5 w-5" />
+                        Book All Excursions
+                      </Button>
+                      <Button variant="outline" size="lg" disabled>
+                        Share Trip
+                      </Button>
+                    </div>
                   </div>
                 )}
               </div>
