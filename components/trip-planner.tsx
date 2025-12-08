@@ -90,18 +90,37 @@ export function TripPlanner() {
       newExpanded.delete(tripId)
     } else {
       newExpanded.add(tripId)
-      // Load excursions if not already loaded
-      if (!tripExcursions[tripId]) {
-        try {
-          const excursions = await getTripExcursions(tripId)
-          setTripExcursions(prev => ({ ...prev, [tripId]: excursions }))
-        } catch (err) {
-          console.error('Failed to load trip excursions:', err)
-        }
+      // Always reload excursions when expanding to get fresh data
+      try {
+        const excursions = await getTripExcursions(tripId)
+        setTripExcursions(prev => ({ ...prev, [tripId]: excursions }))
+      } catch (err) {
+        console.error('Failed to load trip excursions:', err)
       }
     }
     setExpandedTrips(newExpanded)
   }
+
+  // Reload excursions for expanded trips
+  const reloadExpandedTrips = async () => {
+    for (const tripId of Array.from(expandedTrips)) {
+      try {
+        const excursions = await getTripExcursions(tripId)
+        setTripExcursions(prev => ({ ...prev, [tripId]: excursions }))
+      } catch (err) {
+        console.error('Failed to reload trip excursions:', err)
+      }
+    }
+  }
+
+  // Listen for focus to reload data
+  useEffect(() => {
+    const handleFocus = () => {
+      reloadExpandedTrips()
+    }
+    window.addEventListener('focus', handleFocus)
+    return () => window.removeEventListener('focus', handleFocus)
+  }, [expandedTrips])
 
   if (loading) {
     return (
