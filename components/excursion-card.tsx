@@ -8,6 +8,7 @@ import { Star, Heart, Clock, MapPin } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ProviderIcon } from "@/components/provider-icon"
 import { AuthModal } from "@/components/auth-modal"
+import { useAuth } from "@/lib/auth-context"
 
 interface ExcursionCardProps {
   excursion: {
@@ -31,12 +32,12 @@ export function ExcursionCard({ excursion, onClick, index = 0 }: ExcursionCardPr
   const [isSaved, setIsSaved] = useState(false)
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
+  const { user } = useAuth()
 
   const handleSave = (e: React.MouseEvent) => {
     e.stopPropagation()
 
-    const isLoggedIn = localStorage.getItem("isLoggedIn") === "true"
-    if (!isLoggedIn) {
+    if (!user) {
       setShowAuthModal(true)
       return
     }
@@ -45,7 +46,6 @@ export function ExcursionCard({ excursion, onClick, index = 0 }: ExcursionCardPr
   }
 
   const handleAuthSuccess = () => {
-    localStorage.setItem("isLoggedIn", "true")
     setShowAuthModal(false)
     setIsSaved(true)
   }
