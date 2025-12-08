@@ -30,12 +30,12 @@ export async function GET(request: NextRequest) {
           startDate: startDate || undefined,
           endDate: endDate || undefined,
           page,
-          limit: 100, // Increased from 20 to 100 for more results
+          limit: 50, // Increased from 20 to 50 for more results
         })
         results.push(...viatorResults)
         apiCallSuccessful = true
         console.log(`✅ Viator API: Found ${viatorResults.length} results for "${destination}"`)
-        console.log(`📊 Viator API: Requested limit=100, page=${page}`)
+        console.log(`📊 Viator API: Requested limit=50, page=${page}`)
 
         // Log if we got fewer results than expected
         if (viatorResults.length < 10) {

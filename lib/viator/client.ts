@@ -161,12 +161,20 @@ export class ViatorClient {
         throw new Error(`Destination not found: ${params.destination}`)
       }
 
+      // Use a broad date range to get more results
+      // If no dates provided, search for next 365 days to maximize results
+      const today = new Date()
+      const oneYearFromNow = new Date()
+      oneYearFromNow.setDate(today.getDate() + 365)
+
+      const startDate = params.startDate || today.toISOString().split('T')[0]
+      const endDate = params.endDate || oneYearFromNow.toISOString().split('T')[0]
+
       const requestBody = {
         filtering: {
           destination: destinationId,
-          // NOTE: Date filtering removed - it was too restrictive and limited results
-          // The API filters out products without confirmed availability for specific dates
-          // Users can check availability on the product detail page instead
+          startDate: startDate,
+          endDate: endDate,
         },
         currency: params.currency || 'USD',
         pagination: {
@@ -176,8 +184,8 @@ export class ViatorClient {
       }
 
       console.log('📤 Viator API request body:', JSON.stringify(requestBody, null, 2))
-      if (params.startDate && params.endDate) {
-        console.log(`ℹ️ Note: Date range ${params.startDate} to ${params.endDate} NOT used in API filter (prevents limiting results)`)
+      if (!params.startDate || !params.endDate) {
+        console.log(`ℹ️ Using broad date range (${startDate} to ${endDate}) to maximize results`)
       }
 
       const response = await fetch(`${VIATOR_API_BASE}/products/search`, {
