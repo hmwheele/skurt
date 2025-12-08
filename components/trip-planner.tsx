@@ -7,12 +7,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { CalendarIcon, Plus, MapIcon, Trash2 } from "lucide-react"
+import { CalendarIcon, Plus, MapIcon, Trash2, ChevronDown, ChevronUp } from "lucide-react"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { DateRange } from "react-day-picker"
-import { getUserTrips, createTrip, deleteTrip, getTripExcursions, type Trip } from "@/lib/trips"
+import { getUserTrips, createTrip, deleteTrip, getTripExcursions, type Trip, type TripExcursion } from "@/lib/trips"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { ExcursionCard } from "@/components/excursion-card"
 
 export function TripPlanner() {
   const [showNewTrip, setShowNewTrip] = useState(false)
@@ -23,6 +24,8 @@ export function TripPlanner() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
+  const [expandedTrips, setExpandedTrips] = useState<Set<string>>(new Set())
+  const [tripExcursions, setTripExcursions] = useState<Record<string, TripExcursion[]>>({})
 
   useEffect(() => {
     loadTrips()
@@ -79,6 +82,25 @@ export function TripPlanner() {
       console.error('Failed to delete trip:', err)
       setError(err.message || 'Failed to delete trip')
     }
+  }
+
+  const toggleTripExpanded = async (tripId: string) => {
+    const newExpanded = new Set(expandedTrips)
+    if (newExpanded.has(tripId)) {
+      newExpanded.delete(tripId)
+    } else {
+      newExpanded.add(tripId)
+      // Load excursions if not already loaded
+      if (!tripExcursions[tripId]) {
+        try {
+          const excursions = await getTripExcursions(tripId)
+          setTripExcursions(prev => ({ ...prev, [tripId]: excursions }))
+        } catch (err) {
+          console.error('Failed to load trip excursions:', err)
+        }
+      }
+    }
+    setExpandedTrips(newExpanded)
   }
 
   if (loading) {
@@ -206,29 +228,74 @@ export function TripPlanner() {
         </Card>
       )}
 
-      {trips.map((trip) => (
-        <Card key={trip.id} className="p-6">
-          <div className="flex items-start justify-between">
-            <div>
-              <h3 className="text-lg font-semibold">{trip.name}</h3>
-              <p className="text-sm text-muted-foreground">
-                {trip.destination}
-              </p>
-              <p className="text-sm text-muted-foreground mt-1">
-                {new Date(trip.start_date).toLocaleDateString()} - {new Date(trip.end_date).toLocaleDateString()}
-              </p>
+      {trips.map((trip) => {
+        const isExpanded = expandedTrips.has(trip.id)
+        const excursions = tripExcursions[trip.id] || []
+
+        return (
+          <Card key={trip.id} className="overflow-hidden">
+            <div className="p-6">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold">{trip.name}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {trip.destination}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {new Date(trip.start_date).toLocaleDateString()} - {new Date(trip.end_date).toLocaleDateString()}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    {excursions.length} {excursions.length === 1 ? 'excursion' : 'excursions'}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => toggleTripExpanded(trip.id)}
+                  >
+                    {isExpanded ? (
+                      <ChevronUp className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    )}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDeleteTrip(trip.id)}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleDeleteTrip(trip.id)}
-              className="text-destructive hover:text-destructive"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        </Card>
-      ))}
+
+            {isExpanded && (
+              <div className="border-t">
+                {excursions.length === 0 ? (
+                  <div className="p-6 text-center text-muted-foreground">
+                    <p>No excursions added yet</p>
+                    <p className="text-sm mt-2">Browse excursions and add them to this trip</p>
+                  </div>
+                ) : (
+                  <div className="divide-y">
+                    {excursions.map((tripExcursion, index) => (
+                      <div key={tripExcursion.id} className="p-4">
+                        <ExcursionCard
+                          excursion={tripExcursion.excursion_data}
+                          index={index}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </Card>
+        )
+      })}
     </div>
   )
 }
