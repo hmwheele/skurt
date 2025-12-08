@@ -40,8 +40,16 @@ export function AddToTripModal({ open, onOpenChange, excursion, onSuccess }: Add
       loadTrips()
       setError(null)
       setSuccessMessage(null)
+
+      // Auto-fill destination from excursion location
+      if (excursion) {
+        const location = excursion.location?.name || excursion.destination?.name || excursion.location || ''
+        if (location && !destination) {
+          setDestination(location)
+        }
+      }
     }
-  }, [open])
+  }, [open, excursion])
 
   const loadTrips = async () => {
     try {
