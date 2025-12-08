@@ -37,7 +37,7 @@ export async function createTrip(tripData: {
   console.log('✅ User authenticated:', user.id)
 
   const { data, error } = await supabase
-    .from('trips')
+    .from('trip_plans')
     .insert({
       user_id: user.id,
       ...tripData,
@@ -67,7 +67,7 @@ export async function getUserTrips() {
   console.log('✅ User authenticated:', user.id)
 
   const { data, error } = await supabase
-    .from('trips')
+    .from('trip_plans')
     .select('*')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
@@ -99,7 +99,7 @@ export async function addExcursionToTrip(
   console.log('✅ User authenticated:', user.id)
 
   const { data, error } = await supabase
-    .from('trip_excursions')
+    .from('trip_plan_items')
     .insert({
       trip_id: tripId,
       excursion_id: excursionId,
@@ -122,7 +122,7 @@ export async function removeExcursionFromTrip(tripId: string, excursionId: strin
   const supabase = createClient()
   
   const { error } = await supabase
-    .from('trip_excursions')
+    .from('trip_plan_items')
     .delete()
     .eq('trip_id', tripId)
     .eq('excursion_id', excursionId)
@@ -134,7 +134,7 @@ export async function getTripExcursions(tripId: string) {
   const supabase = createClient()
 
   const { data, error } = await supabase
-    .from('trip_excursions')
+    .from('trip_plan_items')
     .select('*')
     .eq('trip_id', tripId)
     .order('day', { ascending: true, nullsFirst: false })
@@ -151,7 +151,7 @@ export async function deleteTrip(tripId: string) {
   if (!user) throw new Error('User not authenticated')
 
   const { error } = await supabase
-    .from('trips')
+    .from('trip_plans')
     .delete()
     .eq('id', tripId)
     .eq('user_id', user.id)
