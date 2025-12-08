@@ -43,7 +43,7 @@ export function TripPlanner() {
   }
 
   const handleCreateTrip = async () => {
-    if (!tripName || !destination || !dateRange?.from || !dateRange?.to) return
+    if (!tripName || !dateRange?.from || !dateRange?.to) return
 
     setCreating(true)
     setError(null)
@@ -51,7 +51,7 @@ export function TripPlanner() {
     try {
       await createTrip({
         name: tripName,
-        destination,
+        destination: destination || undefined,
         start_date: format(dateRange.from, 'yyyy-MM-dd'),
         end_date: format(dateRange.to, 'yyyy-MM-dd'),
       })
@@ -142,7 +142,7 @@ export function TripPlanner() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="destination">Destination</Label>
+              <Label htmlFor="destination">Destination (optional)</Label>
               <Input
                 id="destination"
                 placeholder="e.g., Paris, France"
@@ -194,7 +194,7 @@ export function TripPlanner() {
             <div className="flex gap-2">
               <Button
                 onClick={handleCreateTrip}
-                disabled={!tripName || !destination || !dateRange?.from || !dateRange?.to || creating}
+                disabled={!tripName || !dateRange?.from || !dateRange?.to || creating}
               >
                 {creating ? "Creating..." : "Create Trip"}
               </Button>

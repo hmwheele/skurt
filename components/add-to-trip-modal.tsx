@@ -172,13 +172,12 @@ export function AddToTripModal({ open, onOpenChange, excursion, onSuccess }: Add
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="destination">Destination</Label>
+                <Label htmlFor="destination">Destination (optional)</Label>
                 <Input
                   id="destination"
                   placeholder="Paris, France"
                   value={destination}
                   onChange={(e) => setDestination(e.target.value)}
-                  required
                   disabled={loading}
                 />
               </div>

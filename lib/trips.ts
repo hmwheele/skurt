@@ -21,7 +21,7 @@ export interface TripExcursion {
 
 export async function createTrip(tripData: {
   name: string
-  destination: string
+  destination?: string
   start_date: string
   end_date: string
 }) {
