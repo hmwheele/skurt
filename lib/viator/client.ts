@@ -303,12 +303,12 @@ export class ViatorClient {
         provider: 'Viator',
         thumbnail: images[0] || product.thumbnailURL || product.thumbnailHiResURL || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=400&h=300&fit=crop',
         category: this.extractCategory(product.tags || product.categories || []),
-        location: this.currentDestination ||
-                 product.location?.name ||
+        location: product.location?.name ||
                  product.destinationName ||
                  product.destination?.name ||
                  product.locationInfo?.name ||
                  product.address?.city ||
+                 this.currentDestination ||
                  'Location not specified',
         affiliateLink: this.generateAffiliateLink(
           product.productCode || product.code,
