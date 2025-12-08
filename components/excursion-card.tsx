@@ -2,13 +2,14 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Star, Heart, Clock, MapPin } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ProviderIcon } from "@/components/provider-icon"
 import { AuthModal } from "@/components/auth-modal"
 import { useAuth } from "@/lib/auth-context"
+import { saveExcursion, unsaveExcursion, isExcursionSaved } from "@/lib/saved-excursions"
 
 interface ExcursionCardProps {
   excursion: {
@@ -32,9 +33,19 @@ export function ExcursionCard({ excursion, onClick, index = 0 }: ExcursionCardPr
   const [isSaved, setIsSaved] = useState(false)
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
+  const [loading, setLoading] = useState(false)
   const { user } = useAuth()
 
-  const handleSave = (e: React.MouseEvent) => {
+  // Check if excursion is saved when user changes or component mounts
+  useEffect(() => {
+    if (user) {
+      isExcursionSaved(excursion.id).then(setIsSaved)
+    } else {
+      setIsSaved(false)
+    }
+  }, [user, excursion.id])
+
+  const handleSave = async (e: React.MouseEvent) => {
     e.stopPropagation()
 
     if (!user) {
@@ -42,12 +53,31 @@ export function ExcursionCard({ excursion, onClick, index = 0 }: ExcursionCardPr
       return
     }
 
-    setIsSaved(!isSaved)
+    setLoading(true)
+    try {
+      if (isSaved) {
+        await unsaveExcursion(excursion.id)
+        setIsSaved(false)
+      } else {
+        await saveExcursion(excursion.id, excursion)
+        setIsSaved(true)
+      }
+    } catch (error) {
+      console.error('Failed to save excursion:', error)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const handleAuthSuccess = () => {
+  const handleAuthSuccess = async () => {
     setShowAuthModal(false)
-    setIsSaved(true)
+    // Save after successful auth
+    try {
+      await saveExcursion(excursion.id, excursion)
+      setIsSaved(true)
+    } catch (error) {
+      console.error('Failed to save excursion:', error)
+    }
   }
 
   return (

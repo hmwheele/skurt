@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils"
 import { ProviderIcon } from "@/components/provider-icon"
 import { AuthModal } from "@/components/auth-modal"
 import { useAuth } from "@/lib/auth-context"
+import { saveExcursion, unsaveExcursion, isExcursionSaved } from "@/lib/saved-excursions"
 
 interface ExcursionPanelProps {
   excursion: {
@@ -85,6 +86,15 @@ export function ExcursionPanel({ excursion, open, onClose }: ExcursionPanelProps
     }
   }, [open])
 
+  // Check if excursion is saved when panel opens or user changes
+  useEffect(() => {
+    if (open && excursion && user) {
+      isExcursionSaved(excursion.id).then(setIsSaved)
+    } else if (!user) {
+      setIsSaved(false)
+    }
+  }, [open, excursion, user])
+
   if (!excursion) return null
 
   // Use excursion images if available, otherwise use thumbnail as fallback
@@ -109,17 +119,34 @@ export function ExcursionPanel({ excursion, open, onClose }: ExcursionPanelProps
   // Get Mapbox token with proper fallback for client-side rendering
   const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw'
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!user) {
       setShowAuthModal(true)
       return
     }
-    setIsSaved(!isSaved)
+
+    try {
+      if (isSaved) {
+        await unsaveExcursion(excursion.id)
+        setIsSaved(false)
+      } else {
+        await saveExcursion(excursion.id, excursion)
+        setIsSaved(true)
+      }
+    } catch (error) {
+      console.error('Failed to save excursion:', error)
+    }
   }
 
-  const handleAuthSuccess = () => {
+  const handleAuthSuccess = async () => {
     setShowAuthModal(false)
-    setIsSaved(true)
+    // Save after successful auth
+    try {
+      await saveExcursion(excursion.id, excursion)
+      setIsSaved(true)
+    } catch (error) {
+      console.error('Failed to save excursion:', error)
+    }
   }
 
   const handleAddToTrip = () => {
